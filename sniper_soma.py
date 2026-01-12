@@ -1,23 +1,37 @@
 import streamlit as st
-import datetime
 
-st.set_page_config(page_title="Sniper Soma", layout="centered")
+# Configuração da página para celular
+st.set_page_config(page_title="Algoritmo Soma Pro", layout="centered")
 
-st.markdown("<style>.stApp { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
+# --- SISTEMA DE SENHA ---
+SENHA_CORRETA = "SOMA77"  # <--- VOCÊ PODE MUDAR A SUA SENHA AQUI
 
-st.title("⚖️ Sniper: Soma de Pedras")
-st.write("Digite a última pedra e o minuto que ela saiu.")
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
 
-col1, col2 = st.columns(2)
-with col1:
-    pedra = st.number_input("Nº da Pedra", 1, 14, 13)
-with col2:
-    minuto_saiu = st.number_input("Minuto da Saída", 0, 59, datetime.datetime.now().minute)
+if not st.session_state.autenticado:
+    st.title("🔑 Acesso Restrito")
+    senha = st.text_input("Digite a Chave de Acesso:", type="password")
+    if st.button("Entrar"):
+        if senha == SENHA_CORRETA:
+            st.session_state.autenticado = True
+            st.rerun()
+        else:
+            st.error("Chave incorreta! Chame o suporte no WhatsApp.")
+    st.stop()
 
-if st.button('CALCULAR ENTRADA AGORA'):
-    soma = pedra + minuto_saiu
-    alvo = soma if soma < 60 else soma - 60
-    cor = "⚫ PRETO" if pedra > 7 else "🔴 VERMELHO"
-    st.markdown(f"## 🎯 ALVO: Minuto {alvo:02d}")
-    st.markdown(f"### COR: {cor}")
-    st.info("Estratégia: Pedra + Minuto de Saída")
+# --- ABAIXO O CÓDIGO DO SEU ROBÔ (SÓ APARECE APÓS A SENHA) ---
+st.title("🎯 Algoritmo Soma Pro")
+st.subheader("Cálculo por Peso de Pedra")
+
+pedra = st.number_input("Nº da Pedra que saiu:", min_value=0, max_value=14, step=1)
+minuto = st.number_input("Minuto da Saída (0-59):", min_value=0, max_value=59, step=1)
+
+if st.button("GERAR ALVO"):
+    resultado = pedra + minuto
+    # Se passar de 60 minutos, ele ajusta
+    if resultado >= 60:
+        resultado = resultado - 60
+    
+    st.success(f"🔥 ALVO CALCULADO: MINUTO {resultado}")
+    st.info("Entre 1 minuto antes e 1 minuto depois para garantir!")
