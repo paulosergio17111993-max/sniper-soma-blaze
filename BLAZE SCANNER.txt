@@ -1,0 +1,54 @@
+import requests
+import time
+from datetime import datetime
+from colorama import init, Fore, Back, Style
+
+init(autoreset=True)
+
+# Memória do Scanner
+mapa_influencia = {i: {1: 0, 2: 0, 0: 0} for i in range(15)}
+
+def rodar_ferramenta():
+    url_recentes = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
+    ultimo_id = None
+    pedra_anterior = None
+
+    # NOME CURTO E LIMPO
+    print(f"\n{Back.WHITE}{Fore.BLACK} 🔥 BLAZE SCANNER: PREVISÃO REAL-TIME 🔥 ")
+
+    while True:
+        try:
+            res_recent = requests.get(url_recentes).json()
+            dado = res_recent[0]
+            id_agora = dado.get('id')
+            cor_atual = dado.get('color')
+            num_atual = dado.get('roll')
+            segundo = datetime.now().second
+
+            if id_agora != ultimo_id:
+                if pedra_anterior is not None:
+                    mapa_influencia[pedra_anterior][cor_atual] += 1
+                
+                ultimo_id = id_agora
+                pedra_anterior = num_atual
+                
+                # FOCO TOTAL NA PREVISÃO DURANTE O INTERVALO
+                if 0 <= segundo <= 25:
+                    cor_sugerida = "VERMELHO 🔴" if cor_atual == 1 else "PRETO ⚫" if cor_atual == 2 else "BRANCO ⚪"
+                    fundo = Back.RED if cor_atual == 1 else Back.BLACK
+                    
+                    print(f"\n{Fore.CYAN}ID ATUAL: {id_agora}")
+                    print(f"{fundo}{Fore.WHITE} 🎯 PREVISÃO: JOGUE NO {cor_sugerida} ")
+                    print(f"{Fore.YELLOW}⏱️ APROVEITE O INTERVALO DE APOSTA!")
+                
+                else:
+                    resultado = "🔴" if cor_atual == 1 else "⚫" if cor_atual == 2 else "⚪"
+                    print(f"✅ FIM DA RODADA: {resultado} (Nº {num_atual})")
+                
+                print("-" * 45)
+
+        except: pass
+        time.sleep(1)
+
+if __name__ == "__main__":
+    rodar_ferramenta()
