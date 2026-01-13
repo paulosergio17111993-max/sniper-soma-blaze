@@ -1,10 +1,11 @@
 import streamlit as st
 import datetime
+import pytz # Biblioteca para o horário de Brasília
 
 # Configuração da página
 st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="centered")
 
-# --- ESTILO GAMER NEON ---
+# --- ESTILO GAMER COM CORES DE ALVO ---
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: #00ffc8; }
@@ -16,13 +17,13 @@ st.markdown("""
     .historico-card {
         background: rgba(255, 255, 255, 0.05);
         padding: 10px; border-radius: 8px;
-        border-left: 5px solid #00ffc8; margin-bottom: 10px;
+        margin-bottom: 10px; font-family: monospace;
     }
     h1 { text-align: center; text-shadow: 2px 2px #7000ff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SISTEMA DE SENHA ---
+# --- SISTEMA DE SENHA E MEMÓRIA ---
 SENHA_CORRETA = "VIP777"
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -40,7 +41,6 @@ if not st.session_state.autenticado:
 
 # --- PAINEL PRINCIPAL ---
 st.markdown("<h1>🎯 SNIPER: SOMA PRO</h1>", unsafe_allow_html=True)
-st.write("---")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -49,38 +49,44 @@ with col2:
     minuto = st.number_input("MINUTO ATUAL:", min_value=0, max_value=59, step=1)
 
 if st.button("🔥 GERAR SINAL SNIPER"):
-    # Efeito de Carregamento
-    with st.spinner('Analisando peso das pedras...'):
-        import time
-        time.sleep(1) # Simula o algoritmo pensando
-        
-        resultado = (pedra + minuto) % 60
-        agora = datetime.datetime.now().strftime("%H:%M:%S")
-        
-        # Adiciona ao histórico (no topo da lista)
-        novo_sinal = f"ALVO: Minuto {resultado:02d} (Gerado às {agora})"
-        st.session_state.historico.insert(0, novo_sinal)
-        
+    # 1. PEGAR HORA DE BRASÍLIA
+    fuso_br = pytz.timezone('America/Sao_Paulo')
+    agora_br = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
+    
+    # 2. CÁLCULO DO ALVO
+    resultado = (pedra + minuto) % 60
+    
+    # 3. LÓGICA DA COR (Personalize se quiser)
+    if pedra == 0:
+        cor_nome = "BRANCO ⚪"
+        cor_hex = "#ffffff"
+    elif pedra % 2 == 0:
+        cor_nome = "VERMELHO 🔴"
+        cor_hex = "#ff0055"
+    else:
+        cor_nome = "PRETO ⚫"
+        cor_hex = "#000000"
+    
+    # 4. SALVAR NO HISTÓRICO
+    sinal_texto = f"⏰ {agora_br} | 🎯 Min {resultado:02d} | {cor_nome}"
+    st.session_state.historico.insert(0, sinal_texto)
+    
+    # 5. MOSTRAR ALVO GRANDE NA TELA
     st.markdown(f"""
-        <div style="background: rgba(112, 0, 255, 0.3); padding: 20px; border-radius: 15px; border: 2px solid #00ffc8; text-align: center;">
-            <h2 style="color: white; margin: 0;">🎯 ALVO CONFIRMADO</h2>
-            <h1 style="color: #00ffc8; font-size: 50px; margin: 10px 0;">MINUTO {resultado:02d}</h1>
+        <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border: 3px solid {cor_hex}; text-align: center;">
+            <h2 style="color: white; margin: 0;">ALVO: MINUTO {resultado:02d}</h2>
+            <h1 style="color: {cor_hex}; font-size: 40px; margin: 10px 0;">{cor_nome}</h1>
+            <p style="color: #00ffc8;">Gerado às: {agora_br}</p>
         </div>
     """, unsafe_allow_html=True)
 
 # --- SEÇÃO DE HISTÓRICO ---
-st.write("")
+st.write("---")
 st.subheader("📋 Últimos Sinais Gerados")
 
-if st.session_state.historico:
-    for sinal in st.session_state.historico[:5]: # Mostra os últimos 5
-        st.markdown(f'<div class="historico-card">{sinal}</div>', unsafe_allow_html=True)
-    
-    if st.button("Limpar Histórico"):
-        st.session_state.historico = []
-        st.rerun()
-else:
-    st.write("Nenhum sinal gerado nesta sessão.")
+for s in st.session_state.historico[:5]:
+    st.markdown(f'<div class="historico-card">{s}</div>', unsafe_allow_html=True)
 
-st.write("---")
-st.caption("Focado na Estratégia de Soma de Pesos.")
+if st.button("Limpar Histórico"):
+    st.session_state.historico = []
+    st.rerun()
