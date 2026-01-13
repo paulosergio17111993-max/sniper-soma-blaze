@@ -5,7 +5,7 @@ import pytz
 # Configuração da página
 st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="centered")
 
-# --- ESTILO VISUAL (IGUAL ÀS FOTOS) ---
+# --- ESTILO VISUAL (CSS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; }
@@ -23,10 +23,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGIN ---
+# --- SISTEMA DE ACESSO ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
+
 if not st.session_state.autenticado:
+    st.title("🔐 ACESSO RESTRITO")
     senha = st.text_input("CHAVE VIP:", type="password")
     if st.button("ENTRAR"):
         if senha == "VIP777":
@@ -34,7 +36,7 @@ if not st.session_state.autenticado:
             st.rerun()
     st.stop()
 
-# --- ENTRADA ---
+# --- INTERFACE DE ENTRADA ---
 st.markdown("<h1>🎯 SISTEMA SOMA PRO</h1>", unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 with col1:
@@ -42,12 +44,13 @@ with col1:
 with col2:
     min_atual = st.number_input("MINUTO ATUAL:", 0, 59, step=1)
 
-# Lógica de Horário
+# Lógica de Horário de Brasília
 fuso = pytz.timezone('America/Sao_Paulo')
 agora = datetime.datetime.now(fuso)
 intervalos = [4, 8, 12, 16, 20]
 
-# --- BOTÕES DE GERAR ---
+# --- BOTÕES DE AÇÃO ---
+st.write("---")
 col_a, col_b, col_c = st.columns(3)
 
 with col_a:
@@ -57,35 +60,50 @@ with col_b:
 with col_c:
     btn_branco = st.button("⚪ LISTA BRANCO")
 
-# --- LÓGICA SINAL ÚNICO ---
+# --- LÓGICA 1: SINAL ÚNICO ---
 if btn_unico:
     alvo = (pedra + min_atual) % 60
     st.markdown(f"""
         <div class="alerta-topo">
-            <p style="margin:0;">⚪ ALVO IDENTIFICADO ⚪</p>
+            <p style="margin:0;">⚪ ALVO NO BRANCO ⚪</p>
             <h1 style="margin:5px 0; font-size:45px;">MINUTO: {alvo:02d}</h1>
             <p style="margin:0; color: #7000ff;">ESTRATEGIA SOMA PRO</p>
         </div>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA LISTA DE CORES ---
+# --- LÓGICA 2: LISTA DE CORES ---
 if btn_cores:
     st.markdown("<h3>📋 PRÓXIMAS CORES ASSERTIVAS</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
-        cor_txt, cor_css = ("VERMELHO 🔴", "red") if i % 2 == 0 else ("PRETO ⚫", "black")
+        if i % 2 == 0:
+            cor_txt, cor_css = "VERMELHO 🔴", "red"
+        else:
+            cor_txt, cor_css = "PRETO ⚫", "black"
         estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
-        st.markdown(f'<div class="card-branco"><span>⏰ {h_fmt}</span><span style="color:{cor_css}">{cor_txt}</span><span class="estrelas">{estrelas}</span></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="card-branco">
+                <span>⏰ {h_fmt}</span>
+                <span style="color:{cor_css}">{cor_txt}</span>
+                <span class="estrelas">{estrelas}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
-# --- LÓGICA LISTA DE BRANCO (O QUE ESTAVA FALTANDO!) ---
+# --- LÓGICA 3: LISTA DE BRANCO ---
 if btn_branco:
     st.markdown("<h3>📝 LISTA ASSERTIVA - BRANCO ⚪</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
         estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
-        st.markdown(f'<div class="card-branco"><span>⏰ {h_fmt}</span><span style="color:gray">BRANCO ⚪</span><span class="estrelas">{estrelas}</span></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="card-branco">
+                <span>⏰ {h_fmt}</span>
+                <span style="color:gray">BRANCO ⚪</span>
+                <span class="estrelas">{estrelas}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
-st.markdown("<p style='text-align:center; color:white; font-size:12px; margin-
-    
+st.write("---")
+st.markdown("<p style='text-align:center; color:white; font-size:12px;'>⚠️ Use proteção no branco!</p>", unsafe_allow_html=True)
