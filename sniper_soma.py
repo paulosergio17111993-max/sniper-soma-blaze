@@ -1,34 +1,38 @@
 import streamlit as st
 import datetime
-import pytz # Biblioteca para o horário de Brasília
+import pytz
 
 # Configuração da página
 st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="centered")
 
-# --- ESTILO GAMER COM CORES DE ALVO ---
+# --- ESTILO VISUAL (CSS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: #00ffc8; }
     .stButton>button {
         width: 100%; background: linear-gradient(45deg, #00ffc8, #7000ff);
         color: white; border: none; padding: 12px; border-radius: 10px;
-        font-weight: bold; box-shadow: 0 0 15px #7000ff;
+        font-weight: bold; box-shadow: 0 0 10px #7000ff;
     }
-    .historico-card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 10px; border-radius: 8px;
-        margin-bottom: 10px; font-family: monospace;
+    .card-sinal {
+        background: white; padding: 12px; border-radius: 8px; 
+        color: #111; font-weight: bold; margin-bottom: 8px;
+        display: flex; justify-content: space-between; align-items: center;
+        border-left: 8px solid #7000ff;
     }
-    h1 { text-align: center; text-shadow: 2px 2px #7000ff; }
+    .resultado-unico {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px; border-radius: 15px; text-align: center;
+        margin-top: 15px; border: 2px solid #00ffc8;
+    }
+    h1, h3 { text-align: center; color: #00ffc8; font-family: sans-serif; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SISTEMA DE SENHA E MEMÓRIA ---
+# --- SISTEMA DE ACESSO ---
 SENHA_CORRETA = "VIP777"
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
-if "historico" not in st.session_state:
-    st.session_state.historico = []
 
 if not st.session_state.autenticado:
     st.title("🔐 ACESSO RESTRITO")
@@ -40,53 +44,69 @@ if not st.session_state.autenticado:
     st.stop()
 
 # --- PAINEL PRINCIPAL ---
-st.markdown("<h1>🎯 SNIPER: SOMA PRO</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🎯 SNIPER & GERADOR VIP</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 with col1:
-    pedra = st.number_input("Nº DA PEDRA:", min_value=0, max_value=14, step=1)
+    pedra = st.number_input("Nº DA ÚLTIMA PEDRA:", min_value=0, max_value=14, step=1)
 with col2:
-    minuto = st.number_input("MINUTO ATUAL:", min_value=0, max_value=59, step=1)
+    minuto_input = st.number_input("MINUTO ATUAL:", min_value=0, max_value=59, step=1)
 
-if st.button("🔥 GERAR SINAL SNIPER"):
-    # 1. PEGAR HORA DE BRASÍLIA
-    fuso_br = pytz.timezone('America/Sao_Paulo')
-    agora_br = datetime.datetime.now(fuso_br).strftime("%H:%M:%S")
-    
-    # 2. CÁLCULO DO ALVO
-    resultado = (pedra + minuto) % 60
-    
-    # 3. LÓGICA DA COR (Personalize se quiser)
-    if pedra == 0:
-        cor_nome = "BRANCO ⚪"
-        cor_hex = "#ffffff"
-    elif pedra % 2 == 0:
-        cor_nome = "VERMELHO 🔴"
-        cor_hex = "#ff0055"
-    else:
-        cor_nome = "PRETO ⚫"
-        cor_hex = "#000000"
-    
-    # 4. SALVAR NO HISTÓRICO
-    sinal_texto = f"⏰ {agora_br} | 🎯 Min {resultado:02d} | {cor_nome}"
-    st.session_state.historico.insert(0, sinal_texto)
-    
-    # 5. MOSTRAR ALVO GRANDE NA TELA
-    st.markdown(f"""
-        <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border: 3px solid {cor_hex}; text-align: center;">
-            <h2 style="color: white; margin: 0;">ALVO: MINUTO {resultado:02d}</h2>
-            <h1 style="color: {cor_hex}; font-size: 40px; margin: 10px 0;">{cor_nome}</h1>
-            <p style="color: #00ffc8;">Gerado às: {agora_br}</p>
-        </div>
-    """, unsafe_allow_html=True)
+# Lógica de Cor (Pedra = Tendência)
+if 1 <= pedra <= 7:
+    cor_nome = "VERMELHO 🔴"
+    cor_hex = "#ff4b4b"
+    outra_cor = "PRETO ⚫"
+elif pedra >= 8:
+    cor_nome = "PRETO ⚫"
+    cor_hex = "#1d1d1d"
+    outra_cor = "VERMELHO 🔴"
+else:
+    cor_nome = "BRANCO ⚪"
+    cor_hex = "#ffffff"
+    outra_cor = "BRANCO ⚪"
 
-# --- SEÇÃO DE HISTÓRICO ---
+# --- BOTÕES DE AÇÃO ---
+tab1, tab2 = st.tabs(["🔥 SINAL ÚNICO", "📋 LISTA VIP"])
+
+with tab1:
+    if st.button("GERAR SINAL AGORA"):
+        alvo = (pedra + minuto_input) % 60
+        st.markdown(f"""
+            <div class="resultado-unico">
+                <p style="color: #ccc; margin: 0;">ENTRADA CONFIRMADA</p>
+                <h1 style="color: {cor_hex}; font-size: 45px; margin: 5px 0;">{cor_nome}</h1>
+                <h2 style="color: white; margin: 0;">MINUTO: {alvo:02d}</h2>
+            </div>
+        """, unsafe_allow_html=True)
+
+with tab2:
+    if st.button("GERAR LISTA COMPLETA"):
+        st.markdown(f"### 📋 LISTA ASSERTIVA - {cor_nome}")
+        fuso_br = pytz.timezone('America/Sao_Paulo')
+        agora_br = datetime.datetime.now(fuso_br)
+        
+        intervalos = [4, 8, 12, 16, 20]
+        
+        for i, tempo in enumerate(intervalos):
+            prox = agora_br + datetime.timedelta(minutes=tempo)
+            h_format = prox.strftime("%H:%M")
+            
+            # Alterna a cor começando pela cor da pedra
+            cor_atual = cor_nome if i % 2 == 0 else outra_cor
+            estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
+            
+            # Cor do texto no card
+            cor_texto = "#ff4b4b" if "VERMELHO" in cor_atual else "#000"
+            
+            st.markdown(f"""
+                <div class="card-sinal">
+                    <span>⏰ {h_format}</span>
+                    <span style="color: {cor_texto};">{cor_atual}</span>
+                    <span style="color: #f1c40f;">{estrelas}</span>
+                </div>
+            """, unsafe_allow_html=True)
+        st.caption("⚠️ Fazer proteção no Branco ⚪")
+
 st.write("---")
-st.subheader("📋 Últimos Sinais Gerados")
-
-for s in st.session_state.historico[:5]:
-    st.markdown(f'<div class="historico-card">{s}</div>', unsafe_allow_html=True)
-
-if st.button("Limpar Histórico"):
-    st.session_state.historico = []
-    st.rerun()
+st.markdown("<p style='text-align: center; color: gray;'>Sistema de Soma Pro v2.0</p>", unsafe_allow_html=True)
