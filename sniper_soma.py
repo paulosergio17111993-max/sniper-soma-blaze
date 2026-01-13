@@ -9,17 +9,17 @@ st.set_page_config(page_title="SISTEMA SOMA PRO", layout="centered")
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; }
-    .card-branco {
+    .card-geral {
         background-color: white; border-radius: 8px; padding: 12px; margin-bottom: 8px;
         display: flex; justify-content: space-between; align-items: center;
         border-left: 10px solid #7000ff; color: black; font-weight: bold;
     }
     .alerta-soma {
         background: white; color: black; padding: 20px; border-radius: 15px;
-        text-align: center; font-weight: bold; border: 5px solid #7000ff; margin-bottom: 25px;
+        text-align: center; font-weight: bold; border: 5px solid #7000ff; margin-bottom: 20px;
     }
     .estrelas { color: #f1c40f; }
-    h1, h3 { color: #00ffc8; text-align: center; font-family: sans-serif; }
+    h1, h3 { color: #00ffc8; text-align: center; margin-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -36,6 +36,11 @@ if not st.session_state.autenticado:
             st.rerun()
     st.stop()
 
+# --- INICIALIZAÇÃO DA MEMÓRIA DO SITE (SESSION STATE) ---
+if 'exibir_soma' not in st.session_state: st.session_state.exibir_soma = False
+if 'exibir_cores' not in st.session_state: st.session_state.exibir_cores = False
+if 'exibir_branco' not in st.session_state: st.session_state.exibir_branco = False
+
 # --- INTERFACE DE ENTRADA ---
 st.markdown("<h1>🎯 SISTEMA SOMA PRO</h1>", unsafe_allow_html=True)
 col1, col2 = st.columns(2)
@@ -49,35 +54,31 @@ fuso = pytz.timezone('America/Sao_Paulo')
 agora = datetime.datetime.now(fuso)
 intervalos = [4, 8, 12, 16, 20]
 
+# --- BOTÕES DE COMANDO ---
 st.write("---")
-
-# --- BOTÕES LADO A LADO ---
 c1, c2, c3 = st.columns(3)
-
-# Inicializa estados para os botões não sumirem
-if 'ver_soma' not in st.session_state: st.session_state.ver_soma = False
-if 'ver_cores' not in st.session_state: st.session_state.ver_cores = False
-if 'ver_branco' not in st.session_state: st.session_state.ver_branco = False
 
 with c1:
     if st.button("🔥 SINAL ÚNICO"):
-        st.session_state.ver_soma = True
-        st.session_state.ver_cores = False
-        st.session_state.ver_branco = False
+        st.session_state.exibir_soma = True
 with c2:
     if st.button("📋 LISTA CORES"):
-        st.session_state.ver_cores = True
-        st.session_state.ver_soma = False
-        st.session_state.ver_branco = False
+        st.session_state.exibir_cores = True
 with c3:
     if st.button("⚪ LISTA BRANCO"):
-        st.session_state.ver_branco = True
-        st.session_state.ver_soma = False
-        st.session_state.ver_cores = False
+        st.session_state.exibir_branco = True
 
-# --- ÁREA DE RESULTADO (CADA UM NO SEU CANTO) ---
+# Botão para limpar tudo se precisar
+if st.button("🗑️ LIMPAR TELA"):
+    st.session_state.exibir_soma = False
+    st.session_state.exibir_cores = False
+    st.session_state.exibir_branco = False
+    st.rerun()
 
-if st.session_state.ver_soma:
+# --- ÁREA DE EXIBIÇÃO (FIXA E INDEPENDENTE) ---
+
+# 1. RESULTADO DA SOMA (SINAL ÚNICO)
+if st.session_state.exibir_soma:
     alvo = (pedra + min_atual) % 60
     st.markdown(f"""
         <div class="alerta-soma">
@@ -87,30 +88,32 @@ if st.session_state.ver_soma:
         </div>
     """, unsafe_allow_html=True)
 
-if st.session_state.ver_cores:
-    st.markdown("<h3>📋 PRÓXIMAS CORES ASSERTIVAS</h3>", unsafe_allow_html=True)
+# 2. LISTA DE CORES (VAI FICAR EMBAIXO SE ATIVADA)
+if st.session_state.exibir_cores:
+    st.markdown("<h3>📝 PRÓXIMAS CORES ASSERTIVAS 🔴⚫</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
-        # Alternância do seu arquivo original
+        # Lógica de alternância do seu arquivo original
         cor_txt, cor_css = ("VERMELHO 🔴", "red") if i % 2 == 0 else ("PRETO ⚫", "black")
         estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
         st.markdown(f"""
-            <div class="card-branco">
+            <div class="card-geral">
                 <span>⏰ {h_fmt}</span>
                 <span style="color:{cor_css}">{cor_txt}</span>
                 <span class="estrelas">{estrelas}</span>
             </div>
         """, unsafe_allow_html=True)
 
-if st.session_state.ver_branco:
+# 3. LISTA DE BRANCO (VAI FICAR EMBAIXO SE ATIVADA)
+if st.session_state.exibir_branco:
     st.markdown("<h3>📝 LISTA ASSERTIVA - BRANCO ⚪</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
         estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
         st.markdown(f"""
-            <div class="card-branco">
+            <div class="card-geral">
                 <span>⏰ {h_fmt}</span>
                 <span style="color:gray">BRANCO ⚪</span>
                 <span class="estrelas">{estrelas}</span>
