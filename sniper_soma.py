@@ -1,5 +1,4 @@
-
-    import streamlit as st
+import streamlit as st
 import datetime
 import pytz
 
@@ -10,7 +9,6 @@ st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="centered")
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; }
-    /* Estilo do Alerta de Branco */
     .alerta-branco {
         background: white;
         color: black;
@@ -22,7 +20,6 @@ st.markdown("""
         border-right: 15px solid #7000ff;
         margin-bottom: 25px;
     }
-    /* Estilo dos Cards da Lista de Cores */
     .card-cor {
         background-color: white;
         border-radius: 8px;
@@ -43,7 +40,9 @@ st.markdown("""
 # --- LOGIN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
+
 if not st.session_state.autenticado:
+    st.title("🔐 ACESSO RESTRITO")
     senha = st.text_input("CHAVE VIP:", type="password")
     if st.button("ENTRAR"):
         if senha == "VIP777":
@@ -51,7 +50,7 @@ if not st.session_state.autenticado:
             st.rerun()
     st.stop()
 
-# --- ENTRADA ---
+# --- INTERFACE ---
 st.markdown("<h1>🎯 ANALISADOR SOMA PRO</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
@@ -61,7 +60,7 @@ with col2:
     min_atual = st.number_input("MINUTO ATUAL:", 0, 59, step=1)
 
 if st.button("🔥 GERAR SINAIS"):
-    # --- 1. CÁLCULO DO BRANCO (FOCO PRINCIPAL) ---
+    # 1. CÁLCULO DO BRANCO
     alvo_branco = (pedra + min_atual) % 60
     
     st.markdown(f"""
@@ -72,18 +71,16 @@ if st.button("🔥 GERAR SINAIS"):
         </div>
     """, unsafe_allow_html=True)
 
-    # --- 2. LISTA DE CORES (CONFORME O SEU ARQUIVO) ---
+    # 2. LISTA DE CORES ALTERNADA
     st.markdown("<h3>📋 PRÓXIMAS CORES ASSERTIVAS</h3>", unsafe_allow_html=True)
-    
     fuso = pytz.timezone('America/Sao_Paulo')
     agora = datetime.datetime.now(fuso)
-    intervalos = [4, 8, 12, 16, 20] # Seus intervalos originais
+    intervalos = [4, 8, 12, 16, 20]
     
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
         
-        # Alternando cores: Vermelho, Preto, Vermelho...
         if i % 2 == 0:
             cor_nome, cor_css = "VERMELHO 🔴", "red"
         else:
@@ -99,4 +96,4 @@ if st.button("🔥 GERAR SINAIS"):
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<p style='text-align:center; color:white; font-size:12px;'>⚠️ Use sempre a proteção no branco em todas as entradas!</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:white; font-size:12px;'>⚠️ Use sempre a proteção no branco!</p>", unsafe_allow_html=True)
