@@ -3,7 +3,7 @@ import datetime
 import pytz
 
 # Configuração da página
-st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="centered")
+st.set_page_config(page_title="SISTEMA SOMA PRO", layout="centered")
 
 # --- ESTILO VISUAL (CSS) ---
 st.markdown("""
@@ -14,16 +14,16 @@ st.markdown("""
         display: flex; justify-content: space-between; align-items: center;
         border-left: 10px solid #7000ff; color: black; font-weight: bold;
     }
-    .alerta-topo {
+    .alerta-soma {
         background: white; color: black; padding: 20px; border-radius: 15px;
         text-align: center; font-weight: bold; border: 5px solid #7000ff; margin-bottom: 25px;
     }
     .estrelas { color: #f1c40f; }
-    h1, h3 { color: #00ffc8; text-align: center; }
+    h1, h3 { color: #00ffc8; text-align: center; font-family: sans-serif; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SISTEMA DE ACESSO ---
+# --- LOGIN ---
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
 
@@ -44,43 +44,56 @@ with col1:
 with col2:
     min_atual = st.number_input("MINUTO ATUAL:", 0, 59, step=1)
 
-# Lógica de Horário de Brasília
+# Configuração de Horário
 fuso = pytz.timezone('America/Sao_Paulo')
 agora = datetime.datetime.now(fuso)
 intervalos = [4, 8, 12, 16, 20]
 
-# --- BOTÕES DE AÇÃO ---
 st.write("---")
-col_a, col_b, col_c = st.columns(3)
 
-with col_a:
-    btn_unico = st.button("🔥 SINAL ÚNICO")
-with col_b:
-    btn_cores = st.button("📋 LISTA CORES")
-with col_c:
-    btn_branco = st.button("⚪ LISTA BRANCO")
+# --- BOTÕES LADO A LADO ---
+c1, c2, c3 = st.columns(3)
 
-# --- LÓGICA 1: SINAL ÚNICO ---
-if btn_unico:
+# Inicializa estados para os botões não sumirem
+if 'ver_soma' not in st.session_state: st.session_state.ver_soma = False
+if 'ver_cores' not in st.session_state: st.session_state.ver_cores = False
+if 'ver_branco' not in st.session_state: st.session_state.ver_branco = False
+
+with c1:
+    if st.button("🔥 SINAL ÚNICO"):
+        st.session_state.ver_soma = True
+        st.session_state.ver_cores = False
+        st.session_state.ver_branco = False
+with c2:
+    if st.button("📋 LISTA CORES"):
+        st.session_state.ver_cores = True
+        st.session_state.ver_soma = False
+        st.session_state.ver_branco = False
+with c3:
+    if st.button("⚪ LISTA BRANCO"):
+        st.session_state.ver_branco = True
+        st.session_state.ver_soma = False
+        st.session_state.ver_cores = False
+
+# --- ÁREA DE RESULTADO (CADA UM NO SEU CANTO) ---
+
+if st.session_state.ver_soma:
     alvo = (pedra + min_atual) % 60
     st.markdown(f"""
-        <div class="alerta-topo">
-            <p style="margin:0;">⚪ ALVO NO BRANCO ⚪</p>
-            <h1 style="margin:5px 0; font-size:45px;">MINUTO: {alvo:02d}</h1>
+        <div class="alerta-soma">
+            <p style="margin:0; font-size: 18px;">⚪ ALVO NO BRANCO IDENTIFICADO ⚪</p>
+            <h1 style="margin:5px 0; font-size:50px; color: black;">MINUTO: {alvo:02d}</h1>
             <p style="margin:0; color: #7000ff;">ESTRATEGIA SOMA PRO</p>
         </div>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA 2: LISTA DE CORES ---
-if btn_cores:
+if st.session_state.ver_cores:
     st.markdown("<h3>📋 PRÓXIMAS CORES ASSERTIVAS</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
         h_fmt = prox.strftime("%H:%M")
-        if i % 2 == 0:
-            cor_txt, cor_css = "VERMELHO 🔴", "red"
-        else:
-            cor_txt, cor_css = "PRETO ⚫", "black"
+        # Alternância do seu arquivo original
+        cor_txt, cor_css = ("VERMELHO 🔴", "red") if i % 2 == 0 else ("PRETO ⚫", "black")
         estrelas = "⭐⭐⭐⭐⭐" if i < 2 else "⭐⭐⭐⭐"
         st.markdown(f"""
             <div class="card-branco">
@@ -90,8 +103,7 @@ if btn_cores:
             </div>
         """, unsafe_allow_html=True)
 
-# --- LÓGICA 3: LISTA DE BRANCO ---
-if btn_branco:
+if st.session_state.ver_branco:
     st.markdown("<h3>📝 LISTA ASSERTIVA - BRANCO ⚪</h3>", unsafe_allow_html=True)
     for i, tempo in enumerate(intervalos):
         prox = agora + datetime.timedelta(minutes=tempo)
@@ -106,4 +118,4 @@ if btn_branco:
         """, unsafe_allow_html=True)
 
 st.write("---")
-st.markdown("<p style='text-align:center; color:white; font-size:12px;'>⚠️ Use proteção no branco!</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:white; font-size:12px;'>⚠️ Use sempre a proteção no branco!</p>", unsafe_allow_html=True)
