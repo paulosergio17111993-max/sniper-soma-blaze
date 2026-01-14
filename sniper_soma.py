@@ -1,158 +1,89 @@
-import streamlit as st
-import datetime
-import pytz
-
-# Configuração da página
-st.set_page_config(page_title="SOMA PRO - GAMER EDITION", layout="centered")
-
-# --- VISUAL GAME TOP (CSS NEON & DARK) ---
-st.markdown("""
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Sinais - 99%</title>
     <style>
-    /* Fundo principal com degradê escuro */
-    .stApp {
-        background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%);
-        color: #00f2ff;
-    }
-    
-    /* Estilo dos Títulos */
-    h1 {
-        text-shadow: 0 0 10px #7000ff, 0 0 20px #7000ff;
-        color: #fff;
-        font-family: 'Courier New', Courier, monospace;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-    }
-    
-    /* Botões Gamer */
-    .stButton>button {
-        background: linear-gradient(90deg, #7000ff, #00f2ff);
-        color: white !important;
-        border: none;
-        border-radius: 5px;
-        padding: 10px;
-        font-weight: bold;
-        text-transform: uppercase;
-        transition: 0.3s;
-        box-shadow: 0 0 15px rgba(112, 0, 255, 0.4);
-    }
-    .stButton>button:hover {
-        box-shadow: 0 0 30px rgba(0, 242, 255, 0.8);
-        transform: scale(1.05);
-    }
-
-    /* Card de Sinal Único (Neon Pulsante) */
-    .alerta-soma {
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 25px;
-        border-radius: 15px;
-        text-align: center;
-        border: 2px solid #7000ff;
-        box-shadow: 0 0 20px #7000ff;
-        margin-bottom: 25px;
-    }
-
-    /* Cards das Listas (Visual Glassmorphism) */
-    .card-geral {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border: 1px solid rgba(0, 242, 255, 0.3);
-        color: #fff;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .estrelas { color: #ff00c8; text-shadow: 0 0 5px #ff00c8; }
-    
-    /* Inputs */
-    .stNumberInput label { color: #00f2ff !important; font-weight: bold; }
-    input { background-color: #000 !important; color: #00f2ff !important; border: 1px solid #7000ff !important; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- SISTEMA DE ACESSO ---
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if not st.session_state.autenticado:
-    st.markdown("<h1>⚡ ACESSO VIP ⚡</h1>", unsafe_allow_html=True)
-    senha = st.text_input("DIGITE A CHAVE DE ACESSO:", type="password")
-    if st.button("DESBLOQUEAR TERMINAL"):
-        if senha == "VIP777":
-            st.session_state.autenticado = True
-            st.rerun()
-    st.stop()
-
-# --- MEMÓRIA DO PAINEL ---
-if 'exibir_soma' not in st.session_state: st.session_state.exibir_soma = False
-if 'exibir_cores' not in st.session_state: st.session_state.exibir_cores = False
-if 'exibir_branco' not in st.session_state: st.session_state.exibir_branco = False
-
-# --- INTERFACE ---
-st.markdown("<h1>🎮 SOMA PRO v3.0</h1>", unsafe_allow_html=True)
-
-with st.container():
-    col1, col2 = st.columns(2)
-    with col1:
-        pedra = st.number_input("ÚLTIMA PEDRA:", 0, 14, step=1)
-    with col2:
-        min_atual = st.number_input("MINUTO ATUAL:", 0, 59, step=1)
-
-# Lógica de Horário
-fuso = pytz.timezone('America/Sao_Paulo')
-agora = datetime.datetime.now(fuso)
-intervalos = [4, 8, 12, 16, 20]
-
-st.write("---")
-
-# --- BOTÕES DE COMANDO ---
-c1, c2, c3 = st.columns(3)
-with c1:
-    if st.button("🔥 SOMA PEDRA"): st.session_state.exibir_soma = True
-with c2:
-    if st.button("📋 LISTA CORES"): st.session_state.exibir_cores = True
-with c3:
-    if st.button("⚪ LISTA BRANCO"): st.session_state.exibir_branco = True
-
-if st.button("❌ RESETAR SISTEMA"):
-    st.session_state.exibir_soma = st.session_state.exibir_cores = st.session_state.exibir_branco = False
-    st.rerun()
-
-# --- EXIBIÇÃO ---
-
-if st.session_state.exibir_soma:
-    min_soma = (pedra + min_atual) % 60
-    if 1 <= pedra <= 7:
-        c_nome, c_hex = "VERMELHO 🔴", "#ff4b4b"
-    elif pedra >= 8:
-        c_nome, c_hex = "PRETO ⚫", "#1d1d1d"
-    else:
-        c_nome, c_hex = "BRANCO ⚪", "#ffffff"
+        body { background-color: #0b0e11; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-    st.markdown(f"""
-        <div class="alerta-soma">
-            <p style="letter-spacing: 2px; color: #00f2ff;">[ ANALISANDO PADRÃO... ]</p>
-            <h1 style="color: {c_hex}; filter: drop-shadow(0 0 10px {c_hex});">{c_nome}</h1>
-            <h2 style="font-size: 40px; margin: 10px 0;">MINUTO: {min_soma:02d}</h2>
-            <p style="color: #7000ff;">PROTEÇÃO NO BRANCO ATIVADA</p>
+        /* PLACA DE RESULTADOS */
+        .placa-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 500px; margin-bottom: 20px; text-align: center; }
+        .card { background: #1a2026; padding: 15px; border-radius: 8px; border-bottom: 4px solid #333; }
+        .card h3 { font-size: 12px; margin: 0; color: #888; text-transform: uppercase; }
+        .card p { font-size: 24px; font-weight: bold; margin: 5px 0 0 0; }
+        .sg { border-color: #00ff88; color: #00ff88; }
+        .g1 { border-color: #00d4ff; color: #00d4ff; }
+        .loss { border-color: #ff4d4d; color: #ff4d4d; }
+        .total { border-color: #f7b924; color: #f7b924; }
+
+        /* LISTA DE SINAIS */
+        .radar-box { background: #1a2026; width: 100%; max-width: 500px; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #fff; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .sinal-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #2a323a; }
+        .sinal-info { display: flex; align-items: center; gap: 10px; }
+        .btn-check { cursor: pointer; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+        .btn-sg { background: #00ff88; color: #000; }
+        .btn-g1 { background: #00d4ff; color: #000; }
+        .btn-loss { background: #ff4d4d; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="placa-container">
+        <div class="card sg">
+            <h3>SG</h3>
+            <p id="count-sg">0</p>
         </div>
-    """, unsafe_allow_html=True)
+        <div class="card g1">
+            <h3>G1</h3>
+            <p id="count-g1">0</p>
+        </div>
+        <div class="card loss">
+            <h3>LOSS</h3>
+            <p id="count-loss">0</p>
+        </div>
+        <div class="card total">
+            <h3>TOTAL</h3>
+            <p id="count-total">0</p>
+        </div>
+    </div>
 
-if st.session_state.exibir_branco:
-    st.markdown("<h3 style='color: #fff;'>⚪ SCANNER DE BRANCOS</h3>", unsafe_allow_html=True)
-    for t in intervalos:
-        h = (agora + datetime.timedelta(minutes=t)).strftime("%H:%M")
-        st.markdown(f'<div class="card-geral"><span>⏰ {h}</span><span style="color: #fff;">BRANCO ⚪</span><span class="estrelas">⭐⭐⭐⭐⭐</span></div>', unsafe_allow_html=True)
+    <div class="radar-box">
+        <h2>RADAR DE SINAIS</h2>
+        <div id="lista-sinais">
+            <div class="sinal-item">
+                <div class="sinal-info">
+                    <span>⏰ 19:49</span>
+                    <span style="color: #ff4d4d;">● VERMELHO</span>
+                </div>
+                <div>
+                    <button class="btn-check btn-sg" onclick="registrar('sg')">SG</button>
+                    <button class="btn-check btn-g1" onclick="registrar('g1')">G1</button>
+                    <button class="btn-check btn-loss" onclick="registrar('loss')">L</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-if st.session_state.exibir_cores:
-    st.markdown("<h3 style='color: #00f2ff;'>📋 RADAR DE CORES</h3>", unsafe_allow_html=True)
-    for i, t in enumerate(intervalos):
-        h = (agora + datetime.timedelta(minutes=t)).strftime("%H:%M")
-        c_txt, c_hex = ("VERMELHO 🔴", "#ff4b4b") if i % 2 == 0 else ("PRETO ⚫", "#555")
-        st.markdown(f'<div class="card-geral"><span>⏰ {h}</span><span style="color:{c_hex}">{c_txt}</span><span class="estrelas">⭐⭐⭐⭐⭐</span></div>', unsafe_allow_html=True)
+    <script>
+        let sg = 0, g1 = 0, loss = 0, total = 0;
 
-st.markdown("<p style='text-align:center; color:#555; font-size:10px; margin-top:50px;'>CONEXÃO ENCRIPTADA - SOMA PRO V3</p>", unsafe_allow_html=True)
+        function registrar(tipo) {
+            if(tipo === 'sg') {
+                sg++;
+                total++;
+                document.getElementById('count-sg').innerText = sg;
+            } else if(tipo === 'g1') {
+                g1++;
+                total++;
+                document.getElementById('count-g1').innerText = g1;
+            } else if(tipo === 'loss') {
+                loss++;
+                document.getElementById('count-loss').innerText = loss;
+            }
+            document.getElementById('count-total').innerText = total;
+        }
+    </script>
+</body>
+</html>
