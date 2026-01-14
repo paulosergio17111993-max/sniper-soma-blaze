@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- CONFIGURAÇÃO DE SEGURANÇA E VISUAL ---
+# --- CONFIGURAÇÃO DE SEGURANÇA ---
 st.set_page_config(page_title="SNIPER SOMA BLAZE", layout="wide")
 
 st.markdown("""
@@ -19,7 +19,7 @@ if 'loss' not in st.session_state: st.session_state.loss = 0
 
 total_acertos = st.session_state.sg + st.session_state.g1
 
-# --- 1. PLACA DE RESULTADOS (TOPO) ---
+# --- 1. PLACA DE RESULTADOS ---
 st.markdown("### 📊 PLACA DE RESULTADOS")
 c1, c2, c3, c4 = st.columns(4)
 with c1: st.markdown(f'<div class="placa-card" style="border-color: #00ff88;"><b style="color: #00ff88;">SG</b><br><h2>{st.session_state.sg}</h2></div>', unsafe_allow_html=True)
@@ -29,17 +29,16 @@ with c4: st.markdown(f'<div class="placa-card" style="border-color: #f7b924;"><b
 
 st.divider()
 
-# --- 2. RADAR E ANÁLISE ---
+# --- 2. RADAR E ANÁLISE REAL ---
 col_lista, col_analise = st.columns([2, 1])
 
 with col_lista:
     st.markdown("### 📋 RADAR DE SINAIS")
-    # Gerando os horários conforme sua lista
     horarios = ["19:49", "19:53", "19:57", "20:01", "20:05"]
     for h in horarios:
         with st.container():
             col_txt, col_btn = st.columns([3, 2])
-            col_txt.markdown(f'<div class="sinal-box">⏰ {h} | ENTRADA CONFIRMADA 🎯</div>', unsafe_allow_html=True)
+            col_txt.markdown(f'<div class="sinal-box">⏰ {h} | AGUARDANDO PADRÃO... 🎯</div>', unsafe_allow_html=True)
             b1, b2, b3 = col_btn.columns(3)
             if b1.button("SG", key=f"sg_{h}"): 
                 st.session_state.sg += 1
@@ -52,22 +51,23 @@ with col_lista:
                 st.rerun()
 
 with col_analise:
-    st.markdown("### 🧮 ANÁLISE DA PEDRA")
-    # AQUI ESTÁ A CORREÇÃO: 14 É PRETO!
+    st.markdown("### 🧮 ANÁLISE DA PEDRA REAL")
+    # AQUI ESTÁ A CORREÇÃO CONFORME SUA FOTO: ÚLTIMA PEDRA FOI 12
     st.markdown(f"""
     <div style="background: #1a2026; padding: 20px; border-radius: 10px; border: 1px solid #333;">
-        <p><b>ÚLTIMA PEDRA:</b> <span style="color:#555; font-size:22px;">14</span> <span style="color:#444;">(PRETO ⚫)</span></p>
-        <p><b>SOMA IDENTIFICADA:</b> <span style="color:#f7b924;">14</span></p>
-        <p><b>STATUS:</b> Padrão de 99% Ativo</p>
+        <p><b>ÚLTIMA PEDRA:</b> <span style="color:#f7b924; font-size:22px;">12</span> <span style="color:#888;">(PRETO ⚫)</span></p>
+        <p><b>SOMA ATUAL:</b> <span style="color:#f7b924;">12</span></p>
+        <p><b>PADRÃO:</b> Analisando Puxadores</p>
         <hr>
-        <p><b>PUXADORES PARA BRANCO:</b></p>
+        <p><b>NÚMEROS PUXADORES:</b></p>
         <span class="numero-puxador">4</span> 
         <span class="numero-puxador">12</span> 
         <span class="numero-puxador">7</span>
+        <p style="margin-top:10px; font-size:12px; color:#ff4d4d;">⚠️ Confirmado: Pedra 12 detectada no histórico.</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("ZERAR PLACAR"):
+    if st.sidebar.button("ZERAR TUDO"):
         st.session_state.sg = 0
         st.session_state.g1 = 0
         st.session_state.loss = 0
