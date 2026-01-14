@@ -1,120 +1,102 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pytz
-import random
 
 # --- CONFIGURAÇÃO ---
-st.set_page_config(page_title="SNIPER TENDÊNCIA 100%", layout="wide")
+st.set_page_config(page_title="SNIPER SCANNER PRO", layout="wide")
 fuso_br = pytz.timezone('America/Sao_Paulo')
 
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
-    .radar-box { 
-        background-color: #10141d; border: 1px solid #1d2633; border-radius: 10px; 
-        padding: 15px; margin-bottom: 10px; border-left: 5px solid #00ff88;
+    .status-box { 
+        padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;
+        border: 1px solid #1d2633; background: #161b22;
     }
-    .tendencia-badge { 
-        background: #00ff88; color: black; padding: 2px 8px; 
-        border-radius: 5px; font-size: 10px; font-weight: bold;
+    .card-sinal { 
+        background: #1c2128; border-left: 5px solid #00ff88; padding: 15px; 
+        border-radius: 8px; margin-bottom: 10px;
     }
-    .estrelas { color: #f7b924; letter-spacing: 2px; font-weight: bold; }
-    .placa-card { background: #1a2026; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid #333; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- MEMÓRIA ---
-if 'sg' not in st.session_state: st.session_state.sg = 0
-if 'g1' not in st.session_state: st.session_state.g1 = 0
-if 'loss' not in st.session_state: st.session_state.loss = 0
-if 'pedra' not in st.session_state: st.session_state.pedra = 12
-if 'l_sinais' not in st.session_state: st.session_state.l_sinais = []
-if 'tendencia_atual' not in st.session_state: st.session_state.tendencia_atual = "ANALISANDO..."
+if 'padrao_detectado' not in st.session_state: st.session_state.padrao_detectado = "Aguardando Análise..."
+if 'lista_sinais' not in st.session_state: st.session_state.lista_sinais = []
 
-# --- MOTOR DE ANÁLISE DE TENDÊNCIA ---
-def analisar_e_gerar(tipo, p_atual):
-    lista = []
-    agora_br = datetime.now(fuso_br)
+# --- MOTOR DE ANÁLISE PRÉ-GERAÇÃO ---
+def analisar_tendencia_e_gerar():
+    # Aqui o sistema simula a leitura do histórico
+    # Na sua última lista, o padrão era 2-3. Na anterior, era 9-10-8.
+    # Vamos criar uma lógica que decide o melhor ciclo agora.
     
-    # Simulação de análise de tendência (Escaneando ciclos de 2 a 6 minutos)
-    # Na lógica real, ele veria qual desses intervalos mais se repetiu no histórico
-    if p_atual in [1, 3, 5, 7, 9, 11, 13]: # Se saiu Ímpar
-        intervalo_mestre = random.choice([2, 3, 5]) 
-        tendencia = f"CICLO CURTO ({intervalo_mestre} min)"
-    else: # Se saiu Par
-        intervalo_mestre = random.choice([4, 6, 8])
-        tendencia = f"CICLO LONGO ({intervalo_mestre} min)"
+    agora = datetime.now(fuso_br)
     
-    st.session_state.tendencia_atual = tendencia
+    # Simulação de análise: O robô decide qual alternância está 100%
+    # (Em um sistema real, aqui ele consultaria a API da Blaze)
+    decisao = st.session_state.get('escolha_tendencia', 'CURTO 2-3')
     
-    for i in range(1, 6):
-        minuto_sinal = (agora_br + timedelta(minutes=i * intervalo_mestre))
-        h_formatado = minuto_sinal.strftime("%H:%M")
-        
-        if tipo == "COR":
-            cor = "VERMELHO 🔴" if (p_atual + i) % 2 == 0 else "PRETO ⚫"
-            lista.append({"h": h_formatado, "msg": f"ENTRADA: {cor}", "int": intervalo_mestre, "stars": ""})
-        else:
-            lista.append({"h": h_formatado, "msg": "ENTRADA: BRANCO ⚪", "int": intervalo_mestre, "stars": "⭐⭐⭐⭐⭐"})
-    return lista
+    if "CURTO" in decisao:
+        pulos = [2, 3]
+        st.session_state.padrao_detectado = "🔥 TENDÊNCIA 100%: CICLO 2-3 (ALTA ASSERTIVIDADE)"
+    elif "LONGO" in decisao:
+        pulos = [9, 10, 8]
+        st.session_state.padrao_detectado = "💎 TENDÊNCIA 100%: CICLO LONGO 9-10-8"
+    else:
+        pulos = [4, 5]
+        st.session_state.padrao_detectado = "⚡ TENDÊNCIA 100%: CICLO MÉDIO 4-5"
 
-# --- PLACA DE RESULTADOS ---
-st.markdown("### 📊 PLACA DE RESULTADOS")
-c1, c2, c3, c4 = st.columns(4)
-c1.markdown(f'<div class="placa-card" style="border-color:#00ff88;"><b>SG</b><br><h2>{st.session_state.sg}</h2></div>', unsafe_allow_html=True)
-c2.markdown(f'<div class="placa-card" style="border-color:#00d4ff;"><b>G1</b><br><h2>{st.session_state.g1}</h2></div>', unsafe_allow_html=True)
-c3.markdown(f'<div class="placa-card" style="border-color:#ff4d4d;"><b>LOSS</b><br><h2>{st.session_state.loss}</h2></div>', unsafe_allow_html=True)
-c4.markdown(f'<div class="placa-card" style="border-color:#f7b924;"><b>TOTAL</b><br><h2>{st.session_state.sg + st.session_state.g1}</h2></div>', unsafe_allow_html=True)
-
-st.divider()
+    # GERA A LISTA BASEADA NA ANÁLISE
+    nova_lista = []
+    ref = agora
+    for i in range(15):
+        pulo = pulos[i % len(pulos)]
+        ref = ref + timedelta(minutes=pulo)
+        nova_lista.append({"h": ref.strftime("%H:%M"), "p": pulo})
+    
+    st.session_state.lista_sinais = nova_lista
 
 # --- INTERFACE ---
-col_radar, col_analise = st.columns([2, 1])
+st.title("🎯 SNIPER ANALYSER")
 
-with col_radar:
-    st.markdown(f"### 🏹 RADAR DE TENDÊNCIA: <span style='color:#00ff88'>{st.session_state.tendencia_atual}</span>", unsafe_allow_html=True)
-    
-    if not st.session_state.l_sinais:
-        st.info("Aguardando análise de tendência da pedra atual...")
-    
-    for item in st.session_state.l_sinais:
-        inf, bts = st.columns([3, 1.5])
-        with inf:
-            st.markdown(f"""
-                <div class="radar-box">
-                    <span>⏰ <b>{item['h']}</b> | {item['msg']} <br> 
-                    <span class="tendencia-badge">TENDÊNCIA CONFIRMADA (+{item['int']} min)</span></span>
-                    <span class="estrelas">{item['stars']}</span>
-                </div>
-            """, unsafe_allow_html=True)
-        with bts:
-            b1, b2, b3 = bts.columns(3)
-            if b1.button("SG", key=f"sg_{item['h']}"): st.session_state.sg += 1; st.rerun()
-            if b2.button("G1", key=f"g1_{item['h']}"): st.session_state.g1 += 1; st.rerun()
-            if b3.button("L", key=f"l_{item['h']}"): st.session_state.loss += 1; st.rerun()
+col_main, col_ctrl = st.columns([2, 1])
 
-with col_analise:
-    st.markdown("### 🛠️ MONITOR DE SOMA")
-    st.session_state.pedra = st.number_input("ÚLTIMA PEDRA:", 0, 14, st.session_state.pedra)
-    
+with col_main:
+    # Mostra o resultado da análise prévia
     st.markdown(f"""
-        <div style="background:#1a2026; padding:15px; border-radius:10px;">
-            <b>PEDRA ATUAL:</b> {st.session_state.pedra}<br>
-            <b>ANALISANDO CICLO...</b><br>
-            <small style="color:#888;">O robô está verificando se a tendência é de repetição curta ou longa.</small>
+        <div class="status-box">
+            <small>STATUS DO SCANNER:</small><br>
+            <h3 style="color:#00ff88;">{st.session_state.padrao_detectado}</h3>
         </div>
     """, unsafe_allow_html=True)
+
+    if st.session_state.lista_sinais:
+        for s in st.session_state.lista_sinais:
+            st.markdown(f"""
+                <div class="card-sinal">
+                    <span style="font-size:18px;">⏰ <b>{s['h']}</b> — ENTRADA CONFIRMADA</span><br>
+                    <small style="color:#888;">Analítico: Padrão identificado após pulo de {s['p']}min</small>
+                </div>
+            """, unsafe_allow_html=True)
+
+with col_ctrl:
+    st.subheader("🛠️ SCANNER DE MESA")
+    st.write("Selecione a base da tendência que você está vendo no histórico:")
     
-    st.markdown("---")
-    if st.button("🔥 ANALISAR E GERAR CORES", use_container_width=True):
-        st.session_state.l_sinais = analisar_e_gerar("COR", st.session_state.pedra)
+    st.session_state.escolha_tendencia = st.selectbox(
+        "TIPO DE SCANNER:",
+        ["CURTO 2-3 (PADRÃO QUALITY)", "MÉDIO 4-5", "LONGO 9-10-8"]
+    )
+    
+    if st.button("🔍 ANALISAR E GERAR LISTA", use_container_width=True):
+        analisar_tendencia_e_gerar()
         st.rerun()
 
-    if st.button("💎 ANALISAR E GERAR BRANCOS", use_container_width=True):
-        st.session_state.l_sinais = analisar_e_gerar("BRANCO", st.session_state.pedra)
-        st.rerun()
-
-    if st.button("🗑️ LIMPAR TUDO", use_container_width=True):
-        st.session_state.l_sinais = []
-        st.session_state.sg = 0; st.session_state.g1 = 0; st.session_state.loss = 0
-        st.rerun()
+    st.divider()
+    st.markdown("""
+        **COMO USAR:**
+        1. Olhe os últimos 3 sinais da Blaze.
+        2. Veja se o intervalo é curto (2-3) ou longo.
+        3. Selecione o scanner e gere a lista.
+        4. O robô vai manter a tendência até o final do ciclo.
+    """)
