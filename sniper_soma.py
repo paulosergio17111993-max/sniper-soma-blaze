@@ -1,80 +1,76 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="SNIPER SOMA BLAZE", layout="centered")
+st.set_page_config(page_title="SNIPER SOMA BLAZE", layout="wide")
 
-# Estilização para deixar o fundo escuro e os cards bonitos
+# ESTILO VISUAL (DARK MODE E CORES DO RADAR)
 st.markdown("""
     <style>
     .main { background-color: #0b0e11; }
-    div[data-testid="stMetricValue"] { color: white; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #1a2026; color: white; border: 1px solid #333; }
-    .stButton>button:hover { border-color: #f7b924; color: #f7b924; }
+    .stApp { background-color: #0b0e11; color: white; }
+    .placa-card { background: #1a2026; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid #333; }
+    .sinal-box { background: #161b22; border-radius: 8px; padding: 10px; margin-bottom: 5px; border: 1px solid #30363d; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DOS CONTADORES (A PLACA) ---
-if 'sg' not in st.session_state:
-    st.session_state.sg = 0
-if 'g1' not in st.session_state:
-    st.session_state.g1 = 0
-if 'loss' not in st.session_state:
-    st.session_state.loss = 0
+# --- INICIALIZAÇÃO DOS CONTADORES ---
+if 'sg' not in st.session_state: st.session_state.sg = 0
+if 'g1' not in st.session_state: st.session_state.g1 = 0
+if 'loss' not in st.session_state: st.session_state.loss = 0
 
-# --- LÓGICA DE CÁLCULO ---
 total_acertos = st.session_state.sg + st.session_state.g1
 
-# --- EXIBIÇÃO DA PLACA DE RESULTADOS ---
+# --- CABEÇALHO: PLACA DE RESULTADOS ---
 st.markdown("### 📊 PLACA DE RESULTADOS")
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.markdown(f"<div style='text-align: center; background: #1a2026; padding: 10px; border-radius: 5px; border-bottom: 4px solid #00ff88;'><b style='color: #00ff88;'>SG</b><br><span style='font-size: 25px;'>{st.session_state.sg}</span></div>", unsafe_allow_html=True)
-
-with col2:
-    st.markdown(f"<div style='text-align: center; background: #1a2026; padding: 10px; border-radius: 5px; border-bottom: 4px solid #00d4ff;'><b style='color: #00d4ff;'>G1</b><br><span style='font-size: 25px;'>{st.session_state.g1}</span></div>", unsafe_allow_html=True)
-
-with col3:
-    st.markdown(f"<div style='text-align: center; background: #1a2026; padding: 10px; border-radius: 5px; border-bottom: 4px solid #ff4d4d;'><b style='color: #ff4d4d;'>LOSS</b><br><span style='font-size: 25px;'>{st.session_state.loss}</span></div>", unsafe_allow_html=True)
-
-with col4:
-    st.markdown(f"<div style='text-align: center; background: #1a2026; padding: 10px; border-radius: 5px; border-bottom: 4px solid #f7b924;'><b style='color: #f7b924;'>TOTAL</b><br><span style='font-size: 25px;'>{total_acertos}</span></div>", unsafe_allow_html=True)
+c1, c2, c3, c4 = st.columns(4)
+with c1: st.markdown(f'<div class="placa-card" style="border-color: #00ff88;"><b style="color: #00ff88;">SG</b><br><h2>{st.session_state.sg}</h2></div>', unsafe_allow_html=True)
+with c2: st.markdown(f'<div class="placa-card" style="border-color: #00d4ff;"><b style="color: #00d4ff;">G1</b><br><h2>{st.session_state.g1}</h2></div>', unsafe_allow_html=True)
+with c3: st.markdown(f'<div class="placa-card" style="border-color: #ff4d4d;"><b style="color: #ff4d4d;">LOSS</b><br><h2>{st.session_state.loss}</h2></div>', unsafe_allow_html=True)
+with c4: st.markdown(f'<div class="placa-card" style="border-color: #f7b924;"><b style="color: #f7b924;">TOTAL</b><br><h2>{total_acertos}</h2></div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# --- ÁREA DO RADAR DE SINAIS ---
-st.write("### 📋 RADAR DE SINAIS (LISTA)")
+col_lista, col_soma = st.columns([2, 1])
 
-# Exemplo de como os sinais da sua lista vão aparecer
-# Aqui você pode conectar a sua função de gerar lista
-lista_exemplo = [
-    {"hora": "20:10", "cor": "VERMELHO 🔴"},
-    {"hora": "20:15", "cor": "PRETO ⚫"},
-    {"hora": "20:22", "cor": "VERMELHO 🔴"},
-]
+with col_lista:
+    st.markdown("### 📋 RADAR DE CORES")
+    # LISTA DE CORES (Simulando a geração da sua lista)
+    cores = [
+        {"h": "20:30", "c": "VERMELHO 🔴"},
+        {"h": "20:34", "c": "PRETO ⚫"},
+        {"h": "20:38", "c": "VERMELHO 🔴"}
+    ]
+    for s in cores:
+        with st.container():
+            st.markdown(f'<div class="sinal-box">⏰ {s["h"]} | {s["c"]}</div>', unsafe_allow_html=True)
+            b1, b2, b3 = st.columns(3)
+            if b1.button(f"SG", key=f"sg_{s['h']}"): 
+                st.session_state.sg += 1
+                st.rerun()
+            if b2.button(f"G1", key=f"g1_{s['h']}"): 
+                st.session_state.g1 += 1
+                st.rerun()
+            if b3.button(f"L", key=f"l_{s['h']}"): 
+                st.session_state.loss += 1
+                st.rerun()
 
-for sinal in lista_exemplo:
-    with st.container():
-        c1, c2, c3, c4, c5 = st.columns([2, 3, 1, 1, 1])
-        c1.write(f"⏰ **{sinal['hora']}**")
-        c2.write(f"{sinal['cor']}")
-        
-        # Botões para você validar o sinal enquanto o robô processa
-        if c3.button("SG", key=f"sg_{sinal['hora']}"):
-            st.session_state.sg += 1
-            st.rerun()
-        if c4.button("G1", key=f"g1_{sinal['hora']}"):
-            st.session_state.g1 += 1
-            st.rerun()
-        if c5.button("L", key=f"l_{sinal['hora']}"):
-            st.session_state.loss += 1
-            st.rerun()
+    st.markdown("### ⚪ LISTA DE BRANCOS")
+    brancos = ["20:45", "21:02", "21:15"]
+    for b in brancos:
+        st.markdown(f'<div class="sinal-box" style="border-left: 5px solid white;">⏰ {b} | BRANCO ⚪</div>', unsafe_allow_html=True)
 
-# --- BOTÃO PARA LIMPAR TUDO ---
-if st.sidebar.button("Zerar Placar"):
-    st.session_state.sg = 0
-    st.session_state.g1 = 0
-    st.session_state.loss = 0
-    st.rerun()
+with col_soma:
+    st.markdown("### 🧮 SOMA DAS PEDRAS")
+    # Aqui entra a parte visual das somas que o robô identifica
+    st.info("Aguardando próxima pedra para calcular soma...")
+    st.markdown("""
+        - **Última Soma:** 14 (Vermelho)
+        - **Padrão Detectado:** Quebra no 2x1
+        - **Puxador Ativo:** Número 4 e 12
+    """)
+    
+    if st.button("Zerar Placa"):
+        st.session_state.sg = 0
+        st.session_state.g1 = 0
+        st.session_state.loss = 0
+        st.rerun()
