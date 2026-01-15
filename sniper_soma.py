@@ -6,7 +6,7 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL (QUADRADOS SEPARADOS) ---
+# --- ESTILO VISUAL ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
@@ -26,9 +26,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- MEMÓRIA INDEPENDENTE (PARA NÃO SUMIR) ---
-if 'L1' not in st.session_state: st.session_state.L1 = [] # Memória do Padrão 1
-if 'L2' not in st.session_state: st.session_state.L2 = [] # Memória do Padrão 4-2-3
+# --- MEMÓRIA (NADA SOME) ---
+if 'L1' not in st.session_state: st.session_state.L1 = [] 
+if 'L2' not in st.session_state: st.session_state.L2 = [] 
 
 # --- PLACAR ---
 with st.sidebar:
@@ -39,37 +39,36 @@ with st.sidebar:
     st.metric("LOSS", st.session_state.ls)
     if st.button("✅ REGISTRAR SG"): st.session_state.sg += 1; st.rerun()
     if st.button("❌ REGISTRAR LOSS"): st.session_state.ls += 1; st.rerun()
-    if st.button("🔄 ZERAR TUDO"): 
-        st.session_state.L1 = []; st.session_state.L2 = []; st.session_state.sg = 0; st.session_state.ls = 0
-        st.rerun()
 
-st.title("🎯 SNIPER MS - FERRAMENTAS FIXAS")
+st.title("🎯 SNIPER MS - CENTRAL")
 
-# --- QUADRADO 1: PADRÃO DE SEQUÊNCIA (3 e 6 MINUTOS) ---
+# --- QUADRADO 1: PADRÃO DA LISTA (CICLO +3, +6, +3) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("💎 1. PADRÃO DE SEQUÊNCIA (EXATO)")
+st.subheader("💎 1. PADRÃO REPETIÇÃO (LISTA COMPLETA)")
 c1, c2, c3 = st.columns(3)
-h_in = c1.number_input("Hora:", 0, 23, 14)
-m_in = c2.number_input("Minuto:", 0, 59, 30)
+h_in = c1.number_input("Hora Início:", 0, 23, 14)
+m_in = c2.number_input("Minuto Início:", 0, 59, 9)
 cor_sel = c3.selectbox("Cor:", ["PRETO ⚫", "VERMELHO 🔴"], key="cor1")
 
 if st.button("🚀 GERAR LISTA", key="btn_lista"):
     st.session_state.L1 = []
-    # Padrão da sua lista: 30, 33, 39, 42, 45, 48, 51, 54, 57
-    pulos_exatos = [0, 3, 6, 3, 3, 3, 3, 3, 3] 
+    # Lógica baseada na sua lista: o intervalo é sempre +3, +6, +3... repetindo.
     ref = datetime.now(fuso_ms).replace(hour=int(h_in), minute=int(m_in), second=0, microsecond=0)
     
-    acumulado = 0
-    for p in pulos_exatos:
-        acumulado += p
-        horario = (ref + timedelta(minutes=acumulado)).strftime("%H:%M")
-        st.session_state.L1.append(f"⏰ {horario} | {cor_sel}")
+    # Gerando 20 sinais para cobrir a hora toda como na sua lista
+    intervalos = [3, 6, 3] # Esse é o segredo do seu padrão
+    tempo_atual = ref
+    st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
+    
+    for i in range(19):
+        pulo = intervalos[i % 3] # Alterna entre 3, 6, 3
+        tempo_atual += timedelta(minutes=pulo)
+        st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
 
-# Exibe a lista 1 (Não some quando clica no outro botão)
 if st.session_state.L1:
-    cols = st.columns(3)
+    cols = st.columns(4)
     for i, s in enumerate(st.session_state.L1):
-        with cols[i % 3]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
+        with cols[i % 4]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -91,7 +90,6 @@ if st.button("🚀 GERAR LISTA", key="btn_423"):
         st.session_state.L2.append(f"⏰ {ref_b.strftime('%H:%M')} | {cor_at}")
         cor_at = "PRETO ⚫" if cor_at == "VERMELHO 🔴" else "VERMELHO 🔴"
 
-# Exibe a lista 2 (Não some quando clica no outro botão)
 if st.session_state.L2:
     cols_b = st.columns(3)
     for i, s in enumerate(st.session_state.L2):
