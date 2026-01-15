@@ -6,7 +6,7 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL ---
+# --- ESTILO VISUAL (QUADRADOS IGUAIS ÀS FOTOS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
@@ -19,74 +19,89 @@ st.markdown("""
         background-color: #161b22; border-radius: 8px; padding: 10px; 
         margin-top: 5px; border-left: 5px solid #00ff88; font-weight: bold;
     }
-    .stButton>button { background-color: #6a5acd; color: white; font-weight: bold; width: 100%; }
+    /* Botão Roxo com texto Gerar Lista */
+    .stButton>button { 
+        background-color: #6a5acd; color: white; font-weight: bold; 
+        width: 100%; height: 3.5em; border-radius: 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DE MEMÓRIA ---
+# --- MEMÓRIA (NÃO APAGA AO MUDAR) ---
 if 'mem' not in st.session_state:
     st.session_state.mem = {"espelho": [], "pedra": [], "padrao_423": []}
 if 'placar' not in st.session_state:
     st.session_state.placar = {"SG": 0, "LOSS": 0}
 
-# --- BARRA LATERAL ---
+# --- BARRA LATERAL (PLACAR) ---
 with st.sidebar:
-    st.header("📊 PLACAR")
+    st.header("📊 PLACAR SG")
     st.metric("SG", st.session_state.placar["SG"])
     st.metric("LOSS", st.session_state.placar["LOSS"])
     if st.button("✅ REGISTRAR SG"): st.session_state.placar["SG"] += 1; st.rerun()
     if st.button("❌ REGISTRAR LOSS"): st.session_state.placar["LOSS"] += 1; st.rerun()
+    if st.button("🔄 ZERAR TUDO"): 
+        st.session_state.placar = {"SG": 0, "LOSS": 0}
+        st.session_state.mem = {"espelho": [], "pedra": [], "padrao_423": []}
+        st.rerun()
 
-st.title("🎯 SNIPER MS - OPERAÇÃO CONTÍNUA")
+st.title("🎯 SNIPER MS - SISTEMA DE TÓPICOS")
 
-# --- TÓPICO 1: ESPELHO (AGORA COM HORA TODA) ---
+# --- TÓPICO 1: ESPELHO (3 EM 3 MINUTOS - HORA TODA) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("💎 1. PADRÃO ESPELHO (HORA COMPLETA)")
+st.subheader("💎 1. PADRÃO ESPELHO (3-9-12)")
 col_e1, col_e2 = st.columns(2)
-h_ref = col_e1.number_input("Hora de Início:", 0, 23, datetime.now(fuso_ms).hour)
-c_esp = col_e2.selectbox("Cor de Referência:", ["PRETO ⚫", "VERMELHO 🔴"])
+h_sel = col_e1.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour)
+c_sel = col_e2.selectbox("Cor do :00:", ["PRETO ⚫", "VERMELHO 🔴"])
 
-if st.button("🚀 GERAR LISTA DA HORA TODA"):
-    # Lógica para gerar de 3 em 3 minutos para a hora inteira
-    ref = datetime.now(fuso_ms).replace(hour=int(h_ref), minute=0, second=0, microsecond=0)
+if st.button("🚀 GERAR LISTA", key="btn_esp"):
+    # Gera a sequência de 3 em 3 minutos para a hora toda
+    ref = datetime.now(fuso_ms).replace(hour=int(h_sel), minute=0, second=0, microsecond=0)
     st.session_state.mem["espelho"] = []
-    
-    for minuto in range(0, 60, 3): # Começa no 0 e vai até 60 pulando de 3 em 3
-        h_sinal = (ref + timedelta(minutes=minuto)).strftime("%H:%M")
-        st.session_state.mem["espelho"].append(f"⏰ {h_sinal} | {c_esp}")
+    for m in range(0, 60, 3):
+        h_s = (ref + timedelta(minutes=m)).strftime("%H:%M")
+        st.session_state.mem["espelho"].append(f"⏰ {h_s} | {c_sel}")
 
-# Exibição em colunas para não ficar uma tripa gigante
+# Mostra em 4 colunas para caber tudo no quadrado
 if st.session_state.mem["espelho"]:
     cols = st.columns(4)
-    for i, sinal in enumerate(st.session_state.mem["espelho"]):
-        with cols[i % 4]:
-            st.markdown(f'<div class="card-sinal">{sinal}</div>', unsafe_allow_html=True)
+    for i, s in enumerate(st.session_state.mem["espelho"]):
+        with cols[i % 4]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TÓPICO 2: PEDRA ---
+# --- TÓPICO 2: PEDRA (CÁLCULO DIRETO) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
 st.subheader("🎲 2. CÁLCULO POR PEDRA")
-p_v = st.number_input("Número da Pedra:", 0, 14, 7, key="pedra_input")
-if st.button("🚀 CALCULAR"):
-    m_c = (p_v + datetime.now(fuso_ms).minute) % 60
-    st.session_state.mem["pedra"] = [f"⏰ Minuto :{m_c:02d} | ENTRAR"]
-for sinal in st.session_state.mem["pedra"]:
-    st.markdown(f'<div class="card-sinal">{sinal}</div>', unsafe_allow_html=True)
+p_val = st.number_input("Número da Pedra:", 0, 14, 7)
+if st.button("🚀 GERAR LISTA", key="btn_ped"):
+    m_atual = datetime.now(fuso_ms).minute
+    m_calc = (p_val + m_atual) % 60
+    st.session_state.mem["pedra"] = [f"⏰ Minuto :{m_calc:02d} | ENTRAR"]
+
+for s in st.session_state.mem["pedra"]:
+    st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TÓPICO 3: PADRÃO 4-2-3 ---
+# --- TÓPICO 3: PADRÃO 4-2-3 (SEQUÊNCIA COMPLETA) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
 st.subheader("🎯 3. PADRÃO 4-2-3")
-c_ini = st.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="cor_423")
-if st.button("🚀 GERAR 4-2-3"):
-    pulos = [0, 4, 2, 3, 4, 2]
-    ref_b = datetime.now(fuso_ms)
+col_b1, col_b2, col_b3 = st.columns(3)
+h_b = col_b1.number_input("Hora Início:", 0, 23, datetime.now(fuso_ms).hour, key="h423")
+m_b = col_b2.number_input("Minuto Início:", 0, 59, 10, key="m423")
+c_b = col_b3.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c423")
+
+if st.button("🚀 GERAR LISTA", key="btn_423"):
+    pulos = [0, 4, 2, 3, 4, 2] # Padrão das fotos
+    ref_b = datetime.now(fuso_ms).replace(hour=int(h_b), minute=int(m_b), second=0, microsecond=0)
     st.session_state.mem["padrao_423"] = []
-    c_at = c_ini
+    cor_at = c_b
     for p in pulos:
         ref_b += timedelta(minutes=p)
-        st.session_state.mem["padrao_423"].append(f"⏰ {ref_b.strftime('%H:%M')} | {c_at}")
-        c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
-for sinal in st.session_state.mem["padrao_423"]:
-    st.markdown(f'<div class="card-sinal">{sinal}</div>', unsafe_allow_html=True)
+        st.session_state.mem["padrao_423"].append(f"⏰ {ref_b.strftime('%H:%M')} | {cor_at}")
+        cor_at = "PRETO ⚫" if cor_at == "VERMELHO 🔴" else "VERMELHO 🔴"
+
+if st.session_state.mem["padrao_423"]:
+    cols_b = st.columns(3)
+    for i, s in enumerate(st.session_state.mem["padrao_423"]):
+        with cols_b[i % 3]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
