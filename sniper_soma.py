@@ -2,98 +2,81 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pytz
 
-# --- CONFIGURAÇÃO DE FUSO (TRÊS LAGOAS - MS) ---
 fuso_ms = pytz.timezone('America/Campo_Grande')
-
-st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
+st.set_page_config(page_title="SNIPER MS - CONTADOR", layout="wide")
 
 # --- ESTILO ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
-    .info-inicio { 
-        background: #0d1117; border: 2px solid #00ff88; padding: 25px; 
-        border-radius: 15px; text-align: center; margin-top: 10px;
-    }
     .card-sinal { 
-        background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; 
-        padding: 20px; margin-bottom: 12px; border-left: 10px solid #00ff88;
-        display: flex; justify-content: space-between; align-items: center;
+        background: #161b22; border-radius: 12px; padding: 15px; 
+        margin-bottom: 10px; border-left: 10px solid #00ff88;
     }
-    .texto-sinal { font-size: 26px; font-weight: bold; }
-    .horario-sinal { color: #8b949e; font-size: 18px; margin-right: 15px; }
+    .contador-box {
+        background: #0d1117; border: 1px solid #30363d; padding: 20px;
+        border-radius: 15px; text-align: center; border-top: 4px solid #00ff88;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-if 'l_sinais' not in st.session_state: st.session_state.l_sinais = []
-
-# --- MOTOR COM VOLTA DA PEDRA E INTERVALOS 4-2-3 ---
-def gerar_sequencia_pedra(min_calc, cor_ini):
-    agora = datetime.now(fuso_ms)
-    # Define o primeiro horário com base no cálculo da pedra
-    referencia = agora.replace(minute=min_calc, second=0, microsecond=0)
-    
-    if referencia < agora - timedelta(minutes=2):
-        referencia += timedelta(hours=1)
-        
-    pulos = [0, 4, 2, 3, 4, 2] 
-    sinais_calculados = []
-    cor_atual = cor_ini
-    
-    for p in pulos:
-        referencia += timedelta(minutes=p)
-        sinais_calculados.append({
-            "hora": referencia.strftime("%H:%M"),
-            "cor": cor_atual
-        })
-        cor_atual = "PRETO ⚫" if cor_atual == "VERMELHO 🔴" else "VERMELHO 🔴"
-        
-    return sinais_calculados
+# --- MEMÓRIA DOS ACERTOS ---
+if 'placar' not in st.session_state:
+    st.session_state.placar = {"SG": 0, "G1": 0, "G2": 0, "LOSS": 0}
 
 # --- INTERFACE ---
-st.title("🎯 SNIPER MS - MODO PEDRA")
+st.title("🎯 SNIPER MS - ESTRATÉGIA 3-9-12")
 
-col_lista, col_dados = st.columns([1.6, 1])
+col_lista, col_stats = st.columns([1.5, 1])
 
-with col_dados:
-    st.subheader("⌨️ DADOS DA MESA")
+with col_stats:
+    st.markdown('<div class="contador-box">', unsafe_allow_html=True)
+    st.subheader("📊 CONTADOR DE CICLO")
     
-    # VOLTA DOS CAMPOS DE PEDRA E MINUTO
-    pedra = st.number_input("PEDRA QUE SAIU:", 0, 14, 7)
-    minuto_relogio = st.number_input("MINUTO DO RELÓGIO:", 0, 59, datetime.now(fuso_ms).minute)
+    # Exibição do Placar
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("SG", st.session_state.placar["SG"])
+    c2.metric("G1", st.session_state.placar["G1"])
+    c3.metric("G2", st.session_state.placar["G2"])
+    c4.metric("LOSS", st.session_state.placar["LOSS"], delta_color="inverse")
     
-    # Cálculo oficial: Minuto + Pedra
-    min_final = (minuto_relogio + pedra) % 60
-    
-    # Regra de Cor pela Pedra
-    cor_sugerida = "VERMELHO 🔴" if 1 <= pedra <= 7 else "PRETO ⚫" if 8 <= pedra <= 14 else "BRANCO ⚪"
-    
-    st.markdown(f"""
-        <div class="info-inicio">
-            <small>INÍCIO CALCULADO:</small><br>
-            <h1 style="color:#00ff88; margin:5px 0;">{cor_sugerida.split(' ')[0]}</h1>
-            <h2 style="margin:0;">Horário: :{min_final:02d}</h2>
-            <p style="font-size:12px; color:#8b949e;">Soma: {minuto_relogio} + {pedra}</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("➕ GERAR LISTA (PADRÃO 4-2-3)", use_container_width=True):
-        st.session_state.l_sinais = gerar_sequencia_pedra(min_final, cor_sugerida)
+    st.write("---")
+    st.write("📝 **REGISTRAR RESULTADO:**")
+    bt1, bt2 = st.columns(2)
+    if bt1.button("✅ VITÓRIA SG", use_container_width=True):
+        st.session_state.placar["SG"] += 1
         st.rerun()
-
-    if st.button("🗑️ LIMPAR", use_container_width=True):
-        st.session_state.l_sinais = []
+    if bt2.button("❌ LOSS", use_container_width=True):
+        st.session_state.placar["LOSS"] += 1
         st.rerun()
+        
+    if st.button("🔄 ZERAR CONTADOR", use_container_width=True):
+        st.session_state.placar = {"SG": 0, "G1": 0, "G2": 0, "LOSS": 0}
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col_lista:
-    if st.session_state.l_sinais:
-        st.subheader("🔥 SINAIS GERADOS")
-        for s in st.session_state.l_sinais:
-            cor_borda = "#ff4b4b" if "🔴" in s['cor'] else "#ffffff"
+    st.subheader("🕵️ GERADOR ESPELHO :00")
+    cor_00 = st.selectbox("QUAL COR NO MINUTO :00?", ["VERMELHO 🔴", "PRETO ⚫"])
+    
+    if st.button("🚀 GERAR 3-9-12", use_container_width=True):
+        agora = datetime.now(fuso_ms)
+        ref = agora.replace(minute=0, second=0, microsecond=0)
+        if agora.minute > 15: ref += timedelta(hours=1)
+        
+        st.session_state.sinais_v3 = []
+        for m in [3, 9, 12]:
+            h_sinal = ref + timedelta(minutes=m)
+            st.session_state.sinais_v3.append({"h": h_sinal.strftime("%H:%M"), "c": cor_00})
+
+    if 'sinais_v3' in st.session_state:
+        st.write("---")
+        for s in st.session_state.sinais_v3:
+            cor_b = "#ff4b4b" if "🔴" in s['c'] else "#ffffff"
             st.markdown(f'''
-                <div class="card-sinal" style="border-left-color: {cor_borda};">
-                    <div class="texto-sinal">
-                        <span class="horario-sinal">⏰ {s['hora']}</span> | {s['cor']} + ⚪
-                    </div>
+                <div class="card-sinal" style="border-left-color: {cor_b};">
+                    <span style="font-size:22px;">⏰ {s["h"]} | ENTRAR EM: <b>{s["c"]}</b></span>
                 </div>
             ''', unsafe_allow_html=True)
+
+st.info("💡 Dica: Se o contador marcar 2 LOSS seguidos na hora, pare a operação. A mesa mudou o padrão.")
