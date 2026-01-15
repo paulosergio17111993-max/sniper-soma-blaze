@@ -6,7 +6,7 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL (CONFORME FOTOS) ---
+# --- ESTILO VISUAL ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
@@ -19,7 +19,6 @@ st.markdown("""
         background-color: #161b22; border-radius: 8px; padding: 12px; 
         margin-top: 8px; border-left: 5px solid #00ff88; font-weight: bold;
     }
-    /* Botão Roxo das Fotos */
     .stButton>button { 
         background-color: #6a5acd; color: white; font-weight: bold; 
         width: 100%; height: 3.5em; border-radius: 10px;
@@ -27,70 +26,80 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DE MEMÓRIA ---
-if 'mem' not in st.session_state:
-    st.session_state.mem = {"espelho": [], "soma": [], "padrao_423": []}
-if 'placar' not in st.session_state:
-    st.session_state.placar = {"SG": 0, "LOSS": 0}
+# --- SISTEMA DE MEMÓRIA GLOBAL (IMPEDE QUE AS COISAS SUMAM) ---
+if 'placar_sg' not in st.session_state: st.session_state.placar_sg = 0
+if 'placar_loss' not in st.session_state: st.session_state.placar_loss = 0
+if 'L1' not in st.session_state: st.session_state.L1 = [] # Gaveta Espelho
+if 'L2' not in st.session_state: st.session_state.L2 = [] # Gaveta Soma
+if 'L3' not in st.session_state: st.session_state.L3 = [] # Gaveta 4-2-3
 
-# --- BARRA LATERAL (PLACAR) ---
+# --- BARRA LATERAL (PLACAR INDEPENDENTE) ---
 with st.sidebar:
     st.header("📊 PLACAR SG")
-    st.metric("SG", st.session_state.placar["SG"])
-    st.metric("LOSS", st.session_state.placar["LOSS"])
-    if st.button("✅ REGISTRAR SG"): st.session_state.placar["SG"] += 1; st.rerun()
-    if st.button("❌ REGISTRAR LOSS"): st.session_state.placar["LOSS"] += 1; st.rerun()
+    st.metric("SG", st.session_state.placar_sg)
+    st.metric("LOSS", st.session_state.placar_loss)
+    if st.button("✅ REGISTRAR SG"): 
+        st.session_state.placar_sg += 1
+        st.rerun()
+    if st.button("❌ REGISTRAR LOSS"): 
+        st.session_state.placar_loss += 1
+        st.rerun()
+    if st.button("🔄 LIMPAR TUDO"):
+        st.session_state.L1 = []; st.session_state.L2 = []; st.session_state.L3 = []
+        st.session_state.placar_sg = 0; st.session_state.placar_loss = 0
+        st.rerun()
 
-st.title("🎯 SNIPER MS - CENTRAL DE OPERAÇÕES")
+st.title("🎯 SNIPER MS - CENTRAL")
 
-# --- 1. PADRÃO ESPELHO ---
+# --- 1. QUADRADO ESPELHO ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
 st.subheader("💎 1. PADRÃO ESPELHO (3-9-12)")
-c_esp = st.selectbox("Cor que saiu no :00:", ["PRETO ⚫", "VERMELHO 🔴"], key="esp_c")
-if st.button("🚀 GERAR LISTA", key="btn_esp"):
+c_esp = st.selectbox("Cor do :00:", ["PRETO ⚫", "VERMELHO 🔴"], key="sel_e")
+if st.button("🚀 GERAR LISTA", key="btn_e"):
     ref = datetime.now(fuso_ms).replace(minute=0, second=0, microsecond=0)
-    st.session_state.mem["espelho"] = []
+    st.session_state.L1 = []
     for p in [3, 9, 12]:
-        h_s = (ref + timedelta(minutes=p)).strftime("%H:%M")
-        st.session_state.mem["espelho"].append(f"⏰ {h_s} | {c_esp}")
-for s in st.session_state.mem["espelho"]:
+        h = (ref + timedelta(minutes=p)).strftime("%H:%M")
+        st.session_state.L1.append(f"⏰ {h} | {c_esp}")
+
+for s in st.session_state.L1:
     st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 2. CÁLCULO POR PEDRA (FUNÇÃO SOMA) ---
+# --- 2. QUADRADO SOMA (PEDRA + MINUTO) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("🎲 2. CÁLCULO POR PEDRA (FUNÇÃO SOMA)")
-p_val = st.number_input("Número da Pedra (0-14):", 0, 14, 7, key="pedra_n")
-if st.button("🚀 GERAR LISTA", key="btn_soma"):
-    # Lógica de Soma: Pedra + Minuto Atual
-    minuto_atual = datetime.now(fuso_ms).minute
-    resultado_soma = (p_val + minuto_atual) % 60
-    st.session_state.mem["soma"] = [f"⏰ Minuto :{resultado_soma:02d} | ENTRAR NA COR DO :00"]
+st.subheader("🎲 2. CÁLCULO SOMA (PEDRA + MINUTO)")
+pedra = st.number_input("Pedra (0-14):", 0, 14, 7, key="num_p")
+if st.button("🚀 GERAR LISTA", key="btn_s"):
+    m_atual = datetime.now(fuso_ms).minute
+    res_soma = (pedra + m_atual) % 60
+    st.session_state.L2 = [f"⏰ Minuto :{res_soma:02d} | ENTRAR NA COR DO :00"]
 
-for s in st.session_state.mem["soma"]:
+for s in st.session_state.L2:
     st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 3. PADRÃO 4-2-3 ---
+# --- 3. QUADRADO PADRÃO 4-2-3 ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
 st.subheader("🎯 3. PADRÃO 4-2-3")
-col1, col2, col3 = st.columns(3)
-h_423 = col1.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour)
-m_423 = col2.number_input("Minuto:", 0, 59, 10)
-c_423 = col3.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"])
+col1, col2 = st.columns(2)
+h_423 = col1.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour, key="h_4")
+m_423 = col2.number_input("Minuto:", 0, 59, 10, key="m_4")
+cor_423 = st.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c_4")
 
-if st.button("🚀 GERAR LISTA", key="btn_423"):
+if st.button("🚀 GERAR LISTA", key="btn_b"):
     pulos = [0, 4, 2, 3, 4, 2]
     ref_b = datetime.now(fuso_ms).replace(hour=int(h_423), minute=int(m_423), second=0, microsecond=0)
-    st.session_state.mem["padrao_423"] = []
-    cor_at = c_423
+    st.session_state.L3 = []
+    c_at = cor_423
     for p in pulos:
         ref_b += timedelta(minutes=p)
-        st.session_state.mem["padrao_423"].append(f"⏰ {ref_b.strftime('%H:%M')} | {cor_at}")
-        cor_at = "PRETO ⚫" if cor_at == "VERMELHO 🔴" else "VERMELHO 🔴"
+        st.session_state.L3.append(f"⏰ {ref_b.strftime('%H:%M')} | {c_at}")
+        c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
 
-if st.session_state.mem["padrao_423"]:
+# Exibe em colunas para ficar bonito
+if st.session_state.L3:
     cols = st.columns(3)
-    for i, s in enumerate(st.session_state.mem["padrao_423"]):
+    for i, s in enumerate(st.session_state.L3):
         with cols[i % 3]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
