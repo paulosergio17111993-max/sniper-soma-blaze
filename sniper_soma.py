@@ -6,7 +6,7 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL ---
+# --- ESTILO VISUAL (QUADRADOS SEPARADOS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
@@ -42,33 +42,33 @@ with st.sidebar:
 
 st.title("🎯 SNIPER MS - CENTRAL")
 
-# --- QUADRADO 1: PADRÃO DA LISTA (CICLO +3, +6, +3) ---
+# --- QUADRADO 1: O PADRÃO DA SUA LISTA (CICLO 3-3-6) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("💎 1. PADRÃO REPETIÇÃO (LISTA COMPLETA)")
+st.subheader("💎 1. PADRÃO SEQUÊNCIA REAL (LISTA LONGA)")
 c1, c2, c3 = st.columns(3)
-h_in = c1.number_input("Hora Início:", 0, 23, 14)
-m_in = c2.number_input("Minuto Início:", 0, 59, 9)
+h_in = c1.number_input("Hora:", 0, 23, 14)
+m_in = c2.number_input("Minuto Inicial:", 0, 59, 9)
 cor_sel = c3.selectbox("Cor:", ["PRETO ⚫", "VERMELHO 🔴"], key="cor1")
 
 if st.button("🚀 GERAR LISTA", key="btn_lista"):
     st.session_state.L1 = []
-    # Lógica baseada na sua lista: o intervalo é sempre +3, +6, +3... repetindo.
+    # Lógica da sua lista: Entrada, +3min, +6min, +3min, +6min...
     ref = datetime.now(fuso_ms).replace(hour=int(h_in), minute=int(m_in), second=0, microsecond=0)
     
-    # Gerando 20 sinais para cobrir a hora toda como na sua lista
-    intervalos = [3, 6, 3] # Esse é o segredo do seu padrão
     tempo_atual = ref
     st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
     
-    for i in range(19):
-        pulo = intervalos[i % 3] # Alterna entre 3, 6, 3
+    # Gerando 30 sinais para cobrir quase 3 horas de operação
+    # O padrão alterna entre pular 3 e pular 6 minutos
+    for i in range(29):
+        pulo = 3 if i % 2 == 0 else 6
         tempo_atual += timedelta(minutes=pulo)
         st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
 
 if st.session_state.L1:
-    cols = st.columns(4)
+    cols = st.columns(5) # 5 colunas para caber a lista gigante na tela
     for i, s in enumerate(st.session_state.L1):
-        with cols[i % 4]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
+        with cols[i % 5]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -76,7 +76,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
 st.subheader("🎯 2. PADRÃO 4-2-3")
 c4, c5, c6 = st.columns(3)
-h4 = c4.number_input("Hora:", 0, 23, 21, key="h4")
+h4 = c4.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour, key="h4")
 m4 = c5.number_input("Minuto:", 0, 59, 2, key="m4")
 cor4 = c6.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c4")
 
