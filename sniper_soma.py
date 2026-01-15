@@ -5,95 +5,87 @@ import pytz
 # --- CONFIGURAÇÃO DE FUSO (TRÊS LAGOAS - MS) ---
 fuso_ms = pytz.timezone('America/Campo_Grande')
 
-st.set_page_config(page_title="SNIPER MS - CRUZAMENTO", layout="wide")
+st.set_page_config(page_title="SNIPER 4 SINAIS", layout="wide")
+
+# --- MEMÓRIA ---
+if 'cor_entrada' not in st.session_state: st.session_state.cor_entrada = "Aguardando Soma..."
+if 'l_cores' not in st.session_state: st.session_state.l_cores = []
+if 'l_brancos' not in st.session_state: st.session_state.l_brancos = []
 
 # --- ESTILO ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
-    .box-resultado { 
-        background: #161b22; border: 2px solid #00ff88; padding: 20px; 
-        border-radius: 10px; text-align: center; margin-top: 10px;
-    }
-    .radar-box { 
-        background-color: #10141d; border: 1px solid #1d2633; border-radius: 10px; 
-        padding: 10px; margin-bottom: 5px; border-left: 5px solid #00ff88; 
-    }
+    .box-entrada { background: #161b22; border: 2px solid #00ff88; padding: 15px; border-radius: 10px; text-align: center; }
+    .radar-box { background-color: #10141d; border: 1px solid #1d2633; border-radius: 8px; padding: 12px; margin-bottom: 5px; border-left: 5px solid #00ff88; font-size: 18px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- MEMÓRIA ---
-if 'cor_final' not in st.session_state: st.session_state.cor_final = "Aguardando..."
-if 'l_cores' not in st.session_state: st.session_state.l_cores = []
-if 'l_brancos' not in st.session_state: st.session_state.l_brancos = []
-
-# --- LÓGICA DE CRUZAMENTO (PEDRA + MINUTO) ---
-def calcular_cor_cruzada(pedra, minuto):
-    # Lógica: Soma a pedra com o minuto escolhido
-    # Se o resultado for par = Vermelho, se for ímpar = Preto
-    resultado = pedra + minuto
-    if resultado % 2 == 0:
-        return "VERMELHO 🔴"
-    else:
-        return "PRETO ⚫"
-
-def gerar_lista(tipo, intervalo, cor_base):
+# --- FUNÇÃO DE GERAÇÃO (4 SINAIS - PULO DE 4 MIN) ---
+def gerar_proximos_sinais(tipo, min_base, cor_base, lista_atual):
     agora = datetime.now(fuso_ms)
-    lista = []
-    referencia = agora
-    for i in range(6):
-        referencia = referencia + timedelta(minutes=intervalo)
-        if tipo == "COR":
-            lista.append({"h": referencia.strftime("%H:%M"), "msg": f"ENTRADA: {cor_base}"})
-        else:
-            lista.append({"h": referencia.strftime("%H:%M"), "msg": "ENTRADA: BRANCO ⚪"})
-    return lista
+    
+    # Se já existir uma lista, o novo sinal começa 4 min após o último da lista
+    if lista_atual:
+        ultimo_horario = datetime.strptime(lista_atual[-1]['h'], "%H:%M")
+        referencia = agora.replace(hour=ultimo_horario.hour, minute=ultimo_horario.minute, second=0) + timedelta(minutes=4)
+    else:
+        # Se for a primeira vez, começa no minuto da soma
+        referencia = agora.replace(minute=min_base, second=0, microsecond=0)
+        if referencia < agora:
+            referencia += timedelta(hours=1)
+    
+    nova_remessa = []
+    for i in range(4): # APENAS 4 SINAIS
+        msg = f"ENTRADA: {cor_base}" if tipo == "COR" else "ENTRADA: BRANCO ⚪"
+        nova_remessa.append({"h": referencia.strftime("%H:%M"), "msg": msg})
+        referencia = referencia + timedelta(minutes=4)
+        
+    return nova_remessa
 
 # --- INTERFACE ---
-st.title("🎯 SNIPER MS - CRUZAMENTO PEDRA/MINUTO")
+st.title("🎯 SNIPER MS - CICLO DE 4 SINAIS")
 
 col_lista, col_ctrl = st.columns([2, 1])
 
 with col_ctrl:
-    st.subheader("🛠️ ENTRADA DE DADOS")
+    st.subheader("🧮 SOMA MESTRA")
+    p_pedra = st.number_input("PEDRA:", 0, 14, 5)
+    p_minuto = st.number_input("MINUTO:", 0, 59, 10)
     
-    # OS DOIS LUGARES PARA COLOCAR OS DADOS
-    v_pedra = st.number_input("DIGITE A PEDRA:", 0, 14, 5)
-    v_minuto = st.number_input("DIGITE O MINUTO:", 0, 60, 4)
-    
-    # BOTÃO PARA GERAR A COR DAQUELA PEDRA + MINUTO
-    if st.button("🔄 CRUZAR DADOS E GERAR COR", use_container_width=True):
-        st.session_state.cor_final = calcular_cor_cruzada(v_pedra, v_minuto)
+    if st.button("🔥 SOMAR PEDRA + MINUTO", use_container_width=True):
+        total = p_pedra + p_minuto
+        st.session_state.cor_entrada = "VERMELHO 🔴" if total % 2 == 0 else "PRETO ⚫"
     
     st.markdown(f"""
-        <div class="box-resultado">
-            <small>RESULTADO DO CRUZAMENTO:</small><br>
-            <h2 style="color:#00ff88;">{st.session_state.cor_final}</h2>
+        <div class="box-entrada">
+            <small>COR GERADA:</small><br>
+            <h2 style="color:#00ff88;">{st.session_state.cor_entrada}</h2>
         </div>
     """, unsafe_allow_html=True)
     
     st.divider()
     
-    # BOTÕES PARA GERAR AS LISTAS (USANDO O INTERVALO QUE VOCÊ COLOCOU NO MINUTO)
-    if st.button("🔥 GERAR LISTA DE CORES", use_container_width=True):
-        if st.session_state.cor_final != "Aguardando...":
-            st.session_state.l_cores = gerar_lista("COR", v_minuto, st.session_state.cor_final)
+    # BOTÕES DE GERAÇÃO
+    if st.button("➕ GERAR MAIS CORES (4 SINAIS)", use_container_width=True):
+        if "🔴" in st.session_state.cor_entrada or "⚫" in st.session_state.cor_entrada:
+            st.session_state.l_cores = gerar_proximos_sinais("COR", p_minuto, st.session_state.cor_entrada, st.session_state.l_cores)
             
-    if st.button("⚪ GERAR LISTA DE BRANCOS", use_container_width=True):
-        st.session_state.l_brancos = gerar_lista("BRANCO", v_minuto, "")
+    if st.button("➕ GERAR MAIS BRANCOS (4 SINAIS)", use_container_width=True):
+        st.session_state.l_brancos = gerar_proximos_sinais("BRANCO", p_minuto, "", st.session_state.l_brancos)
 
     if st.button("🗑️ LIMPAR TUDO", use_container_width=True):
         st.session_state.l_cores = []; st.session_state.l_brancos = []
-        st.session_state.cor_final = "Aguardando..."
+        st.session_state.cor_entrada = "Aguardando Soma..."
         st.rerun()
 
 with col_lista:
     if st.session_state.l_cores:
-        st.subheader("🔥 RADAR DE CORES")
+        st.subheader("🔥 SEQUÊNCIA DE CORES (PULO 4M)")
         for s in st.session_state.l_cores:
             st.markdown(f'<div class="radar-box">⏰ <b>{s["h"]}</b> | {s["msg"]}</div>', unsafe_allow_html=True)
 
     if st.session_state.l_brancos:
-        st.subheader("⚪ RADAR DE BRANCOS")
+        st.subheader("⚪ SEQUÊNCIA DE BRANCOS (PULO 4M)")
         for s in st.session_state.l_brancos:
             st.markdown(f'<div class="radar-box" style="border-left-color:white;">⏰ <b>{s["h"]}</b> | {s["msg"]}</div>', unsafe_allow_html=True)
