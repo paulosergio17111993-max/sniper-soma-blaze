@@ -5,89 +5,111 @@ import pytz
 # --- CONFIGURAÇÃO DE FUSO (TRÊS LAGOAS - MS) ---
 fuso_ms = pytz.timezone('America/Campo_Grande')
 
-st.set_page_config(page_title="SNIPER MS - TESTE 100%", layout="wide")
+st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO ---
+# --- ESTILO LIMPO E PROFISSIONAL ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
-    .box-setup { 
-        background: #161b22; border: 1px solid #30363d; padding: 20px; 
-        border-radius: 10px; margin-bottom: 20px; border-top: 4px solid #00ff88;
+    
+    /* Box de Informação de Início */
+    .info-inicio { 
+        background: #0d1117; border: 2px solid #00ff88; padding: 25px; 
+        border-radius: 15px; text-align: center; margin-top: 10px;
     }
+    
+    /* Cards dos Sinais */
     .card-sinal { 
-        background-color: #10141d; border: 1px solid #1d2633; border-radius: 10px; 
-        padding: 15px; margin-bottom: 10px; border-left: 8px solid #00ff88;
+        background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; 
+        padding: 20px; margin-bottom: 12px; border-left: 10px solid #00ff88;
+        display: flex; justify-content: space-between; align-items: center;
     }
-    .cor-v { color: #ff4b4b; font-weight: bold; }
-    .cor-p { color: #ffffff; font-weight: bold; text-decoration: underline; }
+    
+    .texto-sinal { font-size: 26px; font-weight: bold; }
+    .horario-sinal { color: #8b949e; font-size: 18px; margin-right: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- MEMÓRIA ---
-if 'l_sinais' not in st.session_state: st.session_state.l_sinais = []
+if 'l_sinais' not in st.session_state: 
+    st.session_state.l_sinais = []
 
-# --- MOTOR DE INTERVALOS (4-2-3) ---
-def gerar_6_sinais(h_inicio, m_inicio, cor_inicio):
-    # Converte o input para objeto de tempo
+# --- MOTOR DE INTELIGÊNCIA (INTERVALOS 4-2-3-4-2) ---
+def gerar_sequencia_vitoriosa(h_ini, m_ini, cor_ini):
     agora = datetime.now(fuso_ms)
-    referencia = agora.replace(hour=h_inicio, minute=m_inicio, second=0, microsecond=0)
+    referencia = agora.replace(hour=h_ini, minute=m_ini, second=0, microsecond=0)
     
-    # Se o horário já passou, assume que é para a próxima hora
-    if referencia < agora - timedelta(minutes=10):
+    if referencia < agora - timedelta(minutes=5):
         referencia += timedelta(hours=1)
         
-    # Sequência extraída das suas listas de 100%: 4 min, depois 2 min, depois 3 min
+    # Intervalos Sanfona: Começa no tempo 0, depois pula 4, 2, 3, 4, 2
     pulos = [0, 4, 2, 3, 4, 2] 
+    sinais_calculados = []
+    cor_atual = cor_ini
     
-    lista = []
-    cor_atual = cor_inicio
-    
-    for i in range(6):
-        referencia += timedelta(minutes=pulos[i])
-        lista.append({
-            "h": referencia.strftime("%H:%M"),
+    for p in pulos:
+        referencia += timedelta(minutes=p)
+        sinais_calculados.append({
+            "hora": referencia.strftime("%H:%M"),
             "cor": cor_atual
         })
-        # Alternância Automática de Cor
+        # Alternância de Cor Automática
         cor_atual = "PRETO ⚫" if cor_atual == "VERMELHO 🔴" else "VERMELHO 🔴"
         
-    return lista
+    return sinais_calculados
 
 # --- INTERFACE ---
-st.title("🏹 SNIPER MS - TESTE DE INTERVALOS")
+st.title("🎯 SNIPER MS - MODO ESTRATÉGICO")
 
-col_lista, col_ctrl = st.columns([1.5, 1])
+col_lista, col_dados = st.columns([1.6, 1])
 
-with col_ctrl:
-    st.markdown('<div class="box-setup">', unsafe_allow_html=True)
-    st.subheader("⚙️ CONFIGURAR LISTA")
+with col_dados:
+    st.subheader("⌨️ DADOS DA MESA")
     
-    c_hora, c_min = st.columns(2)
-    h_ini = c_hora.number_input("HORA:", 0, 23, datetime.now(fuso_ms).hour)
-    m_ini = c_min.number_input("MINUTO:", 0, 59, datetime.now(fuso_ms).minute)
+    h_atual = datetime.now(fuso_ms).hour
+    m_atual = datetime.now(fuso_ms).minute
     
-    cor_ini = st.selectbox("COR DE INÍCIO:", ["VERMELHO 🔴", "PRETO ⚫"])
+    c1, c2 = st.columns(2)
+    h_input = c1.number_input("HORA:", 0, 23, h_atual)
+    m_input = c2.number_input("MINUTO:", 0, 59, m_atual)
     
-    if st.button("🔥 GERAR 6 SINAIS AGORA", use_container_width=True):
-        st.session_state.l_sinais = gerar_6_sinais(h_ini, m_ini, cor_ini)
+    cor_escolhida = st.selectbox("COR DE INÍCIO:", ["VERMELHO 🔴", "PRETO ⚫"])
+    
+    # Painel de Preview do Início
+    st.markdown(f"""
+        <div class="info-inicio">
+            <small>INÍCIO DA SEQUÊNCIA:</small><br>
+            <h1 style="color:#00ff88; margin:5px 0;">{cor_escolhida.split(' ')[0]}</h1>
+            <h2 style="margin:0;">Horário: :{m_input:02d}</h2>
+            <p style="font-size:12px; color:#8b949e;">A lista seguirá o padrão de alternância</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.write("") # Espaçamento
+    
+    if st.button("➕ GERAR LISTA DE SINAIS", use_container_width=True):
+        st.session_state.l_sinais = gerar_sequencia_vitoriosa(h_input, m_input, cor_escolhida)
         st.rerun()
 
-    if st.button("🗑️ LIMPAR", use_container_width=True):
+    if st.button("🗑️ LIMPAR TUDO", use_container_width=True):
         st.session_state.l_sinais = []
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.info("Intervalos aplicados: +4, +2, +3, +4, +2 (Padrão Bear 100%)")
 
 with col_lista:
     if st.session_state.l_sinais:
-        st.subheader("🎯 LISTA DE ENTRADAS")
+        st.subheader("🔥 SINAIS GERADOS")
         for s in st.session_state.l_sinais:
-            cor_borda = "#ff4b4b" if "🔴" in s['cor'] else "#ffffff"
+            # Pega as informações com segurança
+            horario = s.get("hora", "00:00")
+            cor_final = s.get("cor", "BRANCO ⚪")
+            
+            # Define a cor da borda lateral
+            cor_borda = "#ff4b4b" if "🔴" in cor_final else "#ffffff"
+            
             st.markdown(f'''
                 <div class="card-sinal" style="border-left-color: {cor_borda};">
-                    <span style="font-size: 24px;">⏰ {s["h"]} | <b>{s["cor"]}</b></span>
-                    <br><small>Proteção no Branco ⚪</small>
+                    <div class="texto-sinal">
+                        <span class="horario-sinal">⏰ {horario}</span> | {cor_final} + ⚪
+                    </div>
                 </div>
             ''', unsafe_allow_html=True)
