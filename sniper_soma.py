@@ -10,7 +10,6 @@ st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
-    /* Estilo do Quadrado/Tópico */
     .topico-bloco {
         background-color: #0d1117;
         border: 2px solid #30363d;
@@ -31,22 +30,27 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- MEMÓRIAS ---
-if 'mem' not in st.session_state:
+# --- LIMPEZA E INICIALIZAÇÃO DE MEMÓRIA (EVITA KEYERROR) ---
+if 'mem' not in st.session_state or "padrao_423" not in st.session_state.mem:
     st.session_state.mem = {"espelho": [], "pedra": [], "padrao_423": []}
+
 if 'placar' not in st.session_state:
     st.session_state.placar = {"SG": 0, "LOSS": 0}
 
-# --- SIDEBAR (PLACAR) ---
+# --- BARRA LATERAL (PLACAR) ---
 with st.sidebar:
     st.header("📊 PLACAR")
-    st.metric("SG", st.session_state.placar["SG"])
-    st.metric("LOSS", st.session_state.placar["LOSS"])
-    if st.button("✅ REGISTRAR SG"): st.session_state.placar["SG"] += 1; st.rerun()
-    if st.button("❌ REGISTRAR LOSS"): st.session_state.placar["LOSS"] += 1; st.rerun()
-    if st.button("🔄 ZERAR TUDO"): 
-        st.session_state.placar = {"SG": 0, "LOSS": 0}
+    st.metric("SG", st.session_state.placar.get("SG", 0))
+    st.metric("LOSS", st.session_state.placar.get("LOSS", 0))
+    if st.button("✅ REGISTRAR SG"): 
+        st.session_state.placar["SG"] += 1
+        st.rerun()
+    if st.button("❌ REGISTRAR LOSS"): 
+        st.session_state.placar["LOSS"] += 1
+        st.rerun()
+    if st.button("🔄 RESETAR TUDO"):
         st.session_state.mem = {"espelho": [], "pedra": [], "padrao_423": []}
+        st.session_state.placar = {"SG": 0, "LOSS": 0}
         st.rerun()
 
 st.title("🎯 SNIPER MS - CENTRAL DE FERRAMENTAS")
@@ -91,7 +95,6 @@ m_b = c2.number_input("Minuto Inicial:", 0, 59, 10)
 cor_b = c3.selectbox("Cor do Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="t3")
 
 if st.button("🚀 GERAR SEQUÊNCIA 4-2-3"):
-    # Padrão: +4, +2, +3, +4, +2
     pulos = [0, 4, 2, 3, 4, 2]
     ref_b = datetime.now(fuso_ms).replace(hour=int(h_b), minute=int(m_b), second=0, microsecond=0)
     st.session_state.mem["padrao_423"] = []
@@ -101,7 +104,6 @@ if st.button("🚀 GERAR SEQUÊNCIA 4-2-3"):
         st.session_state.mem["padrao_423"].append(f"⏰ {ref_b.strftime('%H:%M')} | {c_at}")
         c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
 
-# Exibe em colunas dentro do quadrado para economizar espaço
 if st.session_state.mem["padrao_423"]:
     cols = st.columns(3)
     for i, sinal in enumerate(st.session_state.mem["padrao_423"]):
