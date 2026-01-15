@@ -25,9 +25,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DE MEMÓRIA ---
-if 'placar' not in st.session_state:
+# --- INICIALIZAÇÃO DE MEMÓRIA SEGURA ---
+# Se o placar não existir ou estiver incompleto (faltando G1), ele reseta
+if 'placar' not in st.session_state or "G1" not in st.session_state.placar:
     st.session_state.placar = {"SG": 0, "G1": 0, "LOSS": 0}
+
 if 'lista_ativa' not in st.session_state:
     st.session_state.lista_ativa = []
 
@@ -35,20 +37,28 @@ if 'lista_ativa' not in st.session_state:
 with st.sidebar:
     st.markdown("### 📊 PLACAR DE HOJE")
     c1, c2, c3 = st.columns(3)
-    c1.metric("SG", st.session_state.placar["SG"])
-    c2.metric("G1", st.session_state.placar["G1"])
-    c3.metric("LOSS", st.session_state.placar["LOSS"])
+    # Pega os valores com .get por segurança extra
+    c1.metric("SG", st.session_state.placar.get("SG", 0))
+    c2.metric("G1", st.session_state.placar.get("G1", 0))
+    c3.metric("LOSS", st.session_state.placar.get("LOSS", 0))
     
     st.markdown("---")
-    if st.button("✅ VITÓRIA SG"): st.session_state.placar["SG"] += 1; st.rerun()
-    if st.button("🟡 VITÓRIA G1"): st.session_state.placar["G1"] += 1; st.rerun()
-    if st.button("❌ LOSS"): st.session_state.placar["LOSS"] += 1; st.rerun()
-    if st.button("🔄 ZERAR TUDO"): st.session_state.placar = {"SG": 0, "G1": 0, "LOSS": 0}; st.rerun()
+    if st.button("✅ VITÓRIA SG"): 
+        st.session_state.placar["SG"] += 1
+        st.rerun()
+    if st.button("🟡 VITÓRIA G1"): 
+        st.session_state.placar["G1"] += 1
+        st.rerun()
+    if st.button("❌ LOSS"): 
+        st.session_state.placar["LOSS"] += 1
+        st.rerun()
+    if st.button("🔄 ZERAR TUDO"): 
+        st.session_state.placar = {"SG": 0, "G1": 0, "LOSS": 0}
+        st.rerun()
 
 # --- PAINEL PRINCIPAL ---
 st.title("🏹 SNIPER MS - CENTRAL DE OPERAÇÕES")
 
-# ABAS ORGANIZADAS
 tab_espelho, tab_pedra, tab_bear = st.tabs([
     "💎 PADRÃO ESPELHO (3-9-12)", 
     "🎲 CÁLCULO POR PEDRA", 
@@ -62,10 +72,8 @@ with tab_espelho:
     cor_00 = st.selectbox("Cor que saiu no :00:", ["VERMELHO 🔴", "PRETO ⚫"], key="sel_00")
     
     if st.button("🚀 GERAR CICLO 3-9-12"):
-        # Baseado no seu padrão: Repete a cor do :00 nos minutos :03, :09 e :12
-        ref = datetime.now(fuso_ms).replace(minute=0, second=0)
+        ref = datetime.now(fuso_ms).replace(minute=0, second=0, microsecond=0)
         if datetime.now(fuso_ms).minute > 15: ref += timedelta(hours=1)
-        
         st.session_state.lista_ativa = []
         for m in [3, 9, 12]:
             hora_s = ref + timedelta(minutes=m)
@@ -79,12 +87,11 @@ with tab_pedra:
     col1, col2 = st.columns(2)
     p_valor = col1.number_input("Pedra que saiu:", 0, 14, 7)
     m_relogio = col2.number_input("Minuto do Relógio:", 0, 59, datetime.now(fuso_ms).minute)
-    
     m_calc = (p_valor + m_relogio) % 60
     st.info(f"O sinal calculado começa no minuto: **:{m_calc:02d}**")
     
     if st.button("🚀 GERAR POR PEDRA"):
-        st.session_state.lista_ativa = [{"h": f"00:{m_calc:02d}", "c": "ANALISANDO...", "t": "SG"}]
+        st.session_state.lista_ativa = [{"h": f"Minuto :{m_calc:02d}", "c": "COR DO 00", "t": "SG"}]
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 3. ABA BEAR (PADRÃO +4, +2, +3...)
@@ -97,9 +104,8 @@ with tab_bear:
     cor_b = c_cor.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"])
     
     if st.button("🚀 GERAR SEQUÊNCIA BEAR"):
-        # Intervalos aplicados: +4, +2, +3, +4, +2
         pulos = [0, 4, 2, 3, 4, 2]
-        ref_b = datetime.now(fuso_ms).replace(hour=h_b, minute=m_b, second=0)
+        ref_b = datetime.now(fuso_ms).replace(hour=h_b, minute=m_b, second=0, microsecond=0)
         st.session_state.lista_ativa = []
         c_at = cor_b
         for p in pulos:
@@ -108,7 +114,7 @@ with tab_bear:
             c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- ÁREA DE RESULTADOS (LISTA GERADA) ---
+# --- ÁREA DE RESULTADOS ---
 if st.session_state.lista_ativa:
     st.markdown("### 🔥 SINAIS PARA OPERAÇÃO")
     for s in st.session_state.lista_ativa:
