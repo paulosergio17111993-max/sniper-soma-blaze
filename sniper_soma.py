@@ -6,7 +6,7 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL ---
+# --- ESTILO VISUAL (QUADRADOS SEPARADOS) ---
 st.markdown("""
     <style>
     .stApp { background-color: #0b0e11; color: white; }
@@ -26,80 +26,74 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- SISTEMA DE MEMÓRIA GLOBAL (IMPEDE QUE AS COISAS SUMAM) ---
-if 'placar_sg' not in st.session_state: st.session_state.placar_sg = 0
-if 'placar_loss' not in st.session_state: st.session_state.placar_loss = 0
-if 'L1' not in st.session_state: st.session_state.L1 = [] # Gaveta Espelho
-if 'L2' not in st.session_state: st.session_state.L2 = [] # Gaveta Soma
-if 'L3' not in st.session_state: st.session_state.L3 = [] # Gaveta 4-2-3
+# --- MEMÓRIA INDEPENDENTE (PARA NÃO SUMIR) ---
+if 'L1' not in st.session_state: st.session_state.L1 = [] # Memória do Padrão 1
+if 'L2' not in st.session_state: st.session_state.L2 = [] # Memória do Padrão 4-2-3
 
-# --- BARRA LATERAL (PLACAR INDEPENDENTE) ---
+# --- PLACAR ---
 with st.sidebar:
-    st.header("📊 PLACAR SG")
-    st.metric("SG", st.session_state.placar_sg)
-    st.metric("LOSS", st.session_state.placar_loss)
-    if st.button("✅ REGISTRAR SG"): 
-        st.session_state.placar_sg += 1
-        st.rerun()
-    if st.button("❌ REGISTRAR LOSS"): 
-        st.session_state.placar_loss += 1
-        st.rerun()
-    if st.button("🔄 LIMPAR TUDO"):
-        st.session_state.L1 = []; st.session_state.L2 = []; st.session_state.L3 = []
-        st.session_state.placar_sg = 0; st.session_state.placar_loss = 0
+    st.header("📊 PLACAR")
+    if 'sg' not in st.session_state: st.session_state.sg = 0
+    if 'ls' not in st.session_state: st.session_state.ls = 0
+    st.metric("SG", st.session_state.sg)
+    st.metric("LOSS", st.session_state.ls)
+    if st.button("✅ REGISTRAR SG"): st.session_state.sg += 1; st.rerun()
+    if st.button("❌ REGISTRAR LOSS"): st.session_state.ls += 1; st.rerun()
+    if st.button("🔄 ZERAR TUDO"): 
+        st.session_state.L1 = []; st.session_state.L2 = []; st.session_state.sg = 0; st.session_state.ls = 0
         st.rerun()
 
-st.title("🎯 SNIPER MS - CENTRAL")
+st.title("🎯 SNIPER MS - FERRAMENTAS FIXAS")
 
-# --- 1. QUADRADO ESPELHO ---
+# --- QUADRADO 1: PADRÃO DE SEQUÊNCIA (3 e 6 MINUTOS) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("💎 1. PADRÃO ESPELHO (3-9-12)")
-c_esp = st.selectbox("Cor do :00:", ["PRETO ⚫", "VERMELHO 🔴"], key="sel_e")
-if st.button("🚀 GERAR LISTA", key="btn_e"):
-    ref = datetime.now(fuso_ms).replace(minute=0, second=0, microsecond=0)
+st.subheader("💎 1. PADRÃO DE SEQUÊNCIA (EXATO)")
+c1, c2, c3 = st.columns(3)
+h_in = c1.number_input("Hora:", 0, 23, 14)
+m_in = c2.number_input("Minuto:", 0, 59, 30)
+cor_sel = c3.selectbox("Cor:", ["PRETO ⚫", "VERMELHO 🔴"], key="cor1")
+
+if st.button("🚀 GERAR LISTA", key="btn_lista"):
     st.session_state.L1 = []
-    for p in [3, 9, 12]:
-        h = (ref + timedelta(minutes=p)).strftime("%H:%M")
-        st.session_state.L1.append(f"⏰ {h} | {c_esp}")
+    # Padrão da sua lista: 30, 33, 39, 42, 45, 48, 51, 54, 57
+    pulos_exatos = [0, 3, 6, 3, 3, 3, 3, 3, 3] 
+    ref = datetime.now(fuso_ms).replace(hour=int(h_in), minute=int(m_in), second=0, microsecond=0)
+    
+    acumulado = 0
+    for p in pulos_exatos:
+        acumulado += p
+        horario = (ref + timedelta(minutes=acumulado)).strftime("%H:%M")
+        st.session_state.L1.append(f"⏰ {horario} | {cor_sel}")
 
-for s in st.session_state.L1:
-    st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 2. QUADRADO SOMA (PEDRA + MINUTO) ---
-st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("🎲 2. CÁLCULO SOMA (PEDRA + MINUTO)")
-pedra = st.number_input("Pedra (0-14):", 0, 14, 7, key="num_p")
-if st.button("🚀 GERAR LISTA", key="btn_s"):
-    m_atual = datetime.now(fuso_ms).minute
-    res_soma = (pedra + m_atual) % 60
-    st.session_state.L2 = [f"⏰ Minuto :{res_soma:02d} | ENTRAR NA COR DO :00"]
-
-for s in st.session_state.L2:
-    st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 3. QUADRADO PADRÃO 4-2-3 ---
-st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("🎯 3. PADRÃO 4-2-3")
-col1, col2 = st.columns(2)
-h_423 = col1.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour, key="h_4")
-m_423 = col2.number_input("Minuto:", 0, 59, 10, key="m_4")
-cor_423 = st.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c_4")
-
-if st.button("🚀 GERAR LISTA", key="btn_b"):
-    pulos = [0, 4, 2, 3, 4, 2]
-    ref_b = datetime.now(fuso_ms).replace(hour=int(h_423), minute=int(m_423), second=0, microsecond=0)
-    st.session_state.L3 = []
-    c_at = cor_423
-    for p in pulos:
-        ref_b += timedelta(minutes=p)
-        st.session_state.L3.append(f"⏰ {ref_b.strftime('%H:%M')} | {c_at}")
-        c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
-
-# Exibe em colunas para ficar bonito
-if st.session_state.L3:
+# Exibe a lista 1 (Não some quando clica no outro botão)
+if st.session_state.L1:
     cols = st.columns(3)
-    for i, s in enumerate(st.session_state.L3):
+    for i, s in enumerate(st.session_state.L1):
         with cols[i % 3]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+
+# --- QUADRADO 2: PADRÃO 4-2-3 ---
+st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
+st.subheader("🎯 2. PADRÃO 4-2-3")
+c4, c5, c6 = st.columns(3)
+h4 = c4.number_input("Hora:", 0, 23, 21, key="h4")
+m4 = c5.number_input("Minuto:", 0, 59, 2, key="m4")
+cor4 = c6.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c4")
+
+if st.button("🚀 GERAR LISTA", key="btn_423"):
+    st.session_state.L2 = []
+    pulos_423 = [0, 4, 2, 3, 4, 2]
+    ref_b = datetime.now(fuso_ms).replace(hour=int(h4), minute=int(m4), second=0, microsecond=0)
+    cor_at = cor4
+    for p in pulos_423:
+        ref_b += timedelta(minutes=p)
+        st.session_state.L2.append(f"⏰ {ref_b.strftime('%H:%M')} | {cor_at}")
+        cor_at = "PRETO ⚫" if cor_at == "VERMELHO 🔴" else "VERMELHO 🔴"
+
+# Exibe a lista 2 (Não some quando clica no outro botão)
+if st.session_state.L2:
+    cols_b = st.columns(3)
+    for i, s in enumerate(st.session_state.L2):
+        with cols_b[i % 3]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
