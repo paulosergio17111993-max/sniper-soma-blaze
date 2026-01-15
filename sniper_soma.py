@@ -6,89 +6,104 @@ import pytz
 fuso_ms = pytz.timezone('America/Campo_Grande')
 st.set_page_config(page_title="SNIPER MS - OFICIAL", layout="wide")
 
-# --- ESTILO VISUAL (QUADRADOS SEPARADOS) ---
+# --- ESTILO VISUAL GAMER ---
 st.markdown("""
     <style>
-    .stApp { background-color: #0b0e11; color: white; }
+    .stApp { background-color: #05070a; color: #e0e0e0; }
     .topico-bloco {
-        background-color: #0d1117; border: 2px solid #30363d;
-        border-radius: 15px; padding: 20px; margin-bottom: 25px;
-        border-top: 5px solid #6a5acd;
+        background: linear-gradient(145deg, #0d1117, #161b22);
+        border: 1px solid #30363d;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border-top: 4px solid #6a5acd;
     }
     .card-sinal { 
-        background-color: #161b22; border-radius: 8px; padding: 12px; 
-        margin-top: 8px; border-left: 5px solid #00ff88; font-weight: bold;
+        background: #1c2128;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 10px;
+        border-left: 5px solid #00ff88;
+        font-weight: bold;
+        text-align: center;
     }
     .stButton>button { 
-        background-color: #6a5acd; color: white; font-weight: bold; 
-        width: 100%; height: 3.5em; border-radius: 10px;
+        background: linear-gradient(90deg, #6a5acd, #8a2be2);
+        color: white !important;
+        font-weight: 800;
+        width: 100%;
+        height: 3.5em;
+        border-radius: 12px;
+        border: none;
+        text-transform: uppercase;
     }
+    div[data-baseweb="input"] { background-color: white !important; border-radius: 8px !important; }
+    input { color: black !important; font-weight: bold !important; }
+    label { color: #6a5acd !important; font-weight: bold !important; font-size: 1.1rem !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- MEMÓRIA (NADA SOME) ---
+# --- SISTEMA DE SENHA ---
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
+
+if not st.session_state.autenticado:
+    st.markdown('<div class="topico-bloco" style="max-width: 450px; margin: 100px auto; text-align: center;">', unsafe_allow_html=True)
+    st.title("🔐 LOGIN SNIPER")
+    senha = st.text_input("SENHA DE ACESSO:", type="password")
+    if st.button("LIBERAR ACESSO"):
+        if senha == "vip777":
+            st.session_state.autenticado = True
+            st.rerun()
+        else:
+            st.error("SENHA INCORRETA")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# --- MEMÓRIA ---
 if 'L1' not in st.session_state: st.session_state.L1 = [] 
 if 'L2' not in st.session_state: st.session_state.L2 = [] 
 
-# --- PLACAR ---
-with st.sidebar:
-    st.header("📊 PLACAR")
-    if 'sg' not in st.session_state: st.session_state.sg = 0
-    if 'ls' not in st.session_state: st.session_state.ls = 0
-    st.metric("SG", st.session_state.sg)
-    st.metric("LOSS", st.session_state.ls)
-    if st.button("✅ REGISTRAR SG"): st.session_state.sg += 1; st.rerun()
-    if st.button("❌ REGISTRAR LOSS"): st.session_state.ls += 1; st.rerun()
+st.markdown("<h1 style='text-align: center; color: #6a5acd; margin-bottom: 40px;'>🎯 SNIPER MS PRO</h1>", unsafe_allow_html=True)
 
-st.title("🎯 SNIPER MS - CENTRAL")
-
-# --- QUADRADO 1: O PADRÃO DA SUA LISTA (CICLO 3-3-6) ---
+# --- QUADRADO 1: SEQUÊNCIA 3-6 (LIMPO) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("💎 1. PADRÃO SEQUÊNCIA REAL (LISTA LONGA)")
 c1, c2, c3 = st.columns(3)
-h_in = c1.number_input("Hora:", 0, 23, 14)
-m_in = c2.number_input("Minuto Inicial:", 0, 59, 9)
-cor_sel = c3.selectbox("Cor:", ["PRETO ⚫", "VERMELHO 🔴"], key="cor1")
+h_in = c1.number_input("HORA:", 0, 23, 14)
+m_in = c2.number_input("MINUTO INICIAL:", 0, 59, 9)
+cor_sel = c3.selectbox("COR:", ["PRETO ⚫", "VERMELHO 🔴"], key="cor1")
 
-if st.button("🚀 GERAR LISTA", key="btn_lista"):
+if st.button("🚀 GERAR LISTA COMPLETA", key="btn1"):
     st.session_state.L1 = []
-    # Lógica da sua lista: Entrada, +3min, +6min, +3min, +6min...
     ref = datetime.now(fuso_ms).replace(hour=int(h_in), minute=int(m_in), second=0, microsecond=0)
-    
-    tempo_atual = ref
-    st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
-    
-    # Gerando 30 sinais para cobrir quase 3 horas de operação
-    # O padrão alterna entre pular 3 e pular 6 minutos
+    t_atual = ref
+    st.session_state.L1.append(f"⏰ {t_atual.strftime('%H:%M')} | {cor_sel}")
     for i in range(29):
         pulo = 3 if i % 2 == 0 else 6
-        tempo_atual += timedelta(minutes=pulo)
-        st.session_state.L1.append(f"⏰ {tempo_atual.strftime('%H:%M')} | {cor_sel}")
+        t_atual += timedelta(minutes=pulo)
+        st.session_state.L1.append(f"⏰ {t_atual.strftime('%H:%M')} | {cor_sel}")
 
 if st.session_state.L1:
-    cols = st.columns(5) # 5 colunas para caber a lista gigante na tela
+    cols = st.columns(5)
     for i, s in enumerate(st.session_state.L1):
         with cols[i % 5]: st.markdown(f'<div class="card-sinal">{s}</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-
-# --- QUADRADO 2: PADRÃO 4-2-3 ---
+# --- QUADRADO 2: PADRÃO 4-2-3 (LIMPO E SEM MINUTO) ---
 st.markdown('<div class="topico-bloco">', unsafe_allow_html=True)
-st.subheader("🎯 2. PADRÃO 4-2-3")
-c4, c5, c6 = st.columns(3)
-h4 = c4.number_input("Hora:", 0, 23, datetime.now(fuso_ms).hour, key="h4")
-m4 = c5.number_input("Minuto:", 0, 59, 2, key="m4")
-cor4 = c6.selectbox("Cor Início:", ["VERMELHO 🔴", "PRETO ⚫"], key="c4")
+c4, c5 = st.columns(2)
+h4 = c4.number_input("HORA DE OPERAÇÃO:", 0, 23, datetime.now(fuso_ms).hour, key="h4")
+cor4 = c5.selectbox("ESCOLHA A COR:", ["VERMELHO 🔴", "PRETO ⚫"], key="c4")
 
-if st.button("🚀 GERAR LISTA", key="btn_423"):
+if st.button("🚀 GERAR PADRÃO 4-2-3", key="btn2"):
     st.session_state.L2 = []
-    pulos_423 = [0, 4, 2, 3, 4, 2]
-    ref_b = datetime.now(fuso_ms).replace(hour=int(h4), minute=int(m4), second=0, microsecond=0)
-    cor_at = cor4
-    for p in pulos_423:
+    pulos = [0, 4, 2, 3, 4, 2]
+    ref_b = datetime.now(fuso_ms).replace(hour=int(h4), minute=0, second=0, microsecond=0)
+    c_at = cor4
+    for p in pulos:
         ref_b += timedelta(minutes=p)
-        st.session_state.L2.append(f"⏰ {ref_b.strftime('%H:%M')} | {cor_at}")
-        cor_at = "PRETO ⚫" if cor_at == "VERMELHO 🔴" else "VERMELHO 🔴"
+        st.session_state.L2.append(f"⏰ {ref_b.strftime('%H:%M')} | {c_at}")
+        c_at = "PRETO ⚫" if c_at == "VERMELHO 🔴" else "VERMELHO 🔴"
 
 if st.session_state.L2:
     cols_b = st.columns(3)
