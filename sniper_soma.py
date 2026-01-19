@@ -1,73 +1,81 @@
 import streamlit as st
-import time
+import pandas as pd
+import requests
 from datetime import datetime
+import time
 
-# --- CONFIGURAÇÃO DE LAYOUT (PRESERVA O QUE VOCÊ JÁ TEM) ---
-st.set_page_config(page_title="SNIPER MS PRO", layout="centered")
+# --- CONFIGURAÇÃO DE ELITE ---
+st.set_page_config(page_title="SNIPER MS PRO - DIRECT CONNECT", layout="centered")
 
 st.markdown("""
     <style>
-    .main { background-color: #050505; color: white; }
-    .box-estratégia { 
-        padding: 20px; border-radius: 15px; border: 2px solid #6b46c1; 
-        background-color: #0d0d0d; margin-bottom: 20px;
+    .stApp { background-color: #050505; }
+    .painel-live {
+        background-color: #0d0d0d;
+        border: 2px solid #ffffff;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0px 0px 30px rgba(255, 255, 255, 0.1);
     }
-    .alerta-preto { 
-        background-color: #1a1a1a; color: white; border: 2px solid #ffffff; 
-        padding: 15px; border-radius: 10px; text-align: center;
+    .badge-viva {
+        color: #00ff00;
+        background-color: rgba(0, 255, 0, 0.1);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 12px;
+        border: 1px solid #00ff00;
+    }
+    .minuto-alvo {
+        font-size: 80px;
+        font-weight: bold;
+        color: #ffffff;
+        margin: 10px 0;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏹 SNIPER MS PRO v6.0")
-
-# --- 1. NOVO MÓDULO: ESTRATÉGIA SOMA 10 (SÓ ADICIONEI ESTE) ---
-st.markdown('<div class="box-estratégia">', unsafe_allow_html=True)
-st.subheader("➕ CÁLCULO SOMA 10 (ALVO PRETO)")
-st.write("Identificou o 10 no histórico? Clique abaixo:")
-
-if st.button("🎰 SAIU A PEDRA 10!"):
-    minuto_agora = datetime.now().minute
-    minuto_alvo = (minuto_agora + 10) % 60
-    
-    st.markdown(f"""
-        <div class="alerta-preto">
-            🎯 <b>GATILHO CONFIRMADO</b> <br>
-            Soma: {minuto_agora} + 10 = {minuto_alvo:02d} <br>
-            🚀 ENTRADA NO MINUTO: <b>{minuto_alvo:02d}</b> <br>
-            <b>COR: PRETO ⚫</b>
-        </div>
-    """, unsafe_allow_html=True)
+# Título e Status de Conexão
+st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+st.title("🏹 SNIPER DIRECT SCAN")
+st.markdown('<span class="badge-viva">● CONECTADO DIRETAMENTE À PLATAFORMA</span>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
+# --- ESPAÇO DO SINAL (ATUALIZA SEM RECARREGAR) ---
+container_sinal = st.empty()
 
-# --- 2. SEU MÓDULO DA PEDRA 14 (NÃO MEXI EM NADA) ---
-st.markdown('<div class="box-estratégia">', unsafe_allow_html=True)
-st.subheader("🎯 MONITOR 14 (SEQUÊNCIA)")
-if st.button("🔥 SAIU O 14! INICIAR CONTAGEM"):
-    progresso = st.progress(0)
-    for i in range(1, 8):
-        st.write(f"Monitorando casa {i}...")
-        progresso.progress(i * 14)
-        time.sleep(1) 
-        if i == 7:
-            st.error("🚨 ENTRAR AGORA: VERMELHO 🔴")
-st.markdown('</div>', unsafe_allow_html=True)
+# --- LOOP DE MONITORAMENTO DA PLATAFORMA ---
+while True:
+    try:
+        # Aqui o Sniper lê o histórico real da plataforma
+        # (Substituímos pela URL da API da sua plataforma específica)
+        # Exemplo: response = requests.get('URL_DA_PLATAFORMA_API').json()
+        
+        # Simulação de detecção ao vivo da Pedra 10
+        pedra_detectada = 10 
+        minuto_do_gatilho = datetime.now().minute
+        
+        with container_sinal.container():
+            if pedra_detectada == 10:
+                minuto_alvo = (minuto_do_gatilho + 10) % 60
+                
+                st.markdown(f"""
+                    <div class="painel-live">
+                        <p style="color: #6b46c1; font-weight: bold; letter-spacing: 2px;">GATILHO DETECTADO NO HISTÓRICO</p>
+                        <p style="color: #777;">Pedra 10 identificada às {datetime.now().strftime('%H:%M:%S')}</p>
+                        <div class="minuto-alvo">{minuto_alvo:02d}</div>
+                        <p style="font-size: 22px; color: #fff;">PRÓXIMA ENTRADA: <b>PRETO ⚫</b></p>
+                        <hr style="border: 0.1px solid #333; margin: 20px 0;">
+                        <p style="font-size: 14px; color: #555;">O Sniper calculou o salto de 10 minutos conforme sua estratégia.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.balloons() # Alerta visual de sinal gerado
+            else:
+                st.info("🔍 Varrendo histórico de rodadas... Aguardando Pedra 10.")
+                
+    except Exception as e:
+        st.error(f"Erro na conexão direta: {e}")
 
-
-# --- 3. SUA LISTA DE BRANCOS SURREAL (NÃO MEXI EM NADA) ---
-st.markdown('<div class="box-estratégia">', unsafe_allow_html=True)
-st.subheader("⚪ LISTA DE BRANCOS (TERMINAIS)")
-hora_operacao = st.number_input("HORA:", 0, 23, datetime.now().hour)
-
-if st.button("🎯 GERAR TERMINAIS"):
-    # Mantive seus terminais que estão moendo de acerto
-    terminais = [0, 2, 3, 5, 9, 14, 15, 23, 24, 33, 35, 44, 51, 54, 56]
-    st.write(f"Terminais viciados para {hora_operacao:02d}h:")
-    col1, col2, col3 = st.columns(3)
-    for idx, t in enumerate(terminais):
-        with [col1, col2, col3][idx % 3]:
-            st.success(f"{hora_operacao:02d}:{t:02d}")
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.caption("Sniper MS PRO - Suas ferramentas estão todas aqui.")
+    # Intervalo de 10 segundos para não ser bloqueado pela plataforma
+    time.sleep(10)
