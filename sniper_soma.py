@@ -1,10 +1,9 @@
 import streamlit as st
 import requests
 import time
-from datetime import datetime
 
-# --- CONFIGURAÇÃO DE DESIGN (CLONE DA SMASH) ---
-st.set_page_config(page_title="SNIPER SMASH LIVE", layout="centered")
+# --- CONFIGURAÇÃO DE DESIGN ---
+st.set_page_config(page_title="SNIPER LIVE", layout="centered")
 
 st.markdown("""
     <style>
@@ -19,7 +18,6 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center;
         font-weight: bold; font-size: 14px; color: white; margin-right: 8px;
     }
-    /* Mapeamento de Cores da API Smash */
     .cor-1 { background-color: #f12c4c; } /* Vermelho */
     .cor-2 { background-color: #2b2b2b; border: 1px solid #444; } /* Preto */
     .cor-0 { background-color: #ffffff; color: #000; } /* Branco */
@@ -33,57 +31,62 @@ st.markdown("""
 
 st.title("🏹 SNIPER MS PRO - LIVE")
 
-# --- MOTOR DE CONEXÃO COM A API QUE VOCÊ PASSOU ---
-def puxar_api_real():
-    try:
-        # Link da API da Smash/Plataforma
-        url = "https://api.smashup.com/api/v1/games/double/history"
-        headers = {'User-Agent': 'Mozilla/5.0'} # Para o site não bloquear o robô
-        r = requests.get(url, headers=headers, timeout=5)
-        return r.json()
-    except:
-        return []
+# Áreas de atualização
+placeholder_hist = st.empty()
+placeholder_sinal = st.empty()
 
-# --- ÁREAS DE ATUALIZAÇÃO ---
-container_hist = st.empty()
-container_sinal = st.empty()
+# URL da API (A que você me enviou os dados)
+URL_API = "https://api.smashup.com/api/v1/games/double/history"
 
 while True:
-    dados = puxar_api_real()
-    
-    if dados:
-        # 1. MOSTRA O HISTÓRICO EM TEMPO REAL
-        with container_hist.container():
-            st.write("🕒 RODADAS AO VIVO (SMASH):")
-            html_hist = '<div class="historico-wrapper">'
-            for p in dados[:15]: # Mostra as últimas 15 pedras
-                html_hist += f'<div class="bola cor-{p["color"]}">{p["roll"]}</div>'
-            html_hist += '</div>'
-            st.markdown(html_hist, unsafe_allow_html=True)
-
-        # 2. LÓGICA DA SOMA 10 (BUSCA NO HISTÓRICO)
-        encontrou_10 = False
-        for item in dados:
-            if item['roll'] == 10:
-                # Pega o minuto do 'created_at' do JSON: "2026-01-20T00:06:02.610Z"
-                # O minuto são os caracteres na posição 14 e 15
-                minuto_pedra = int(item['created_at'][14:16])
-                minuto_alvo = (minuto_pedra + 10) % 60
-                
-                with container_sinal.container():
-                    st.markdown(f"""
-                        <div class="card-sinal">
-                            <p style="color: #00ff00; font-weight: bold; margin:0;">🎯 SINAL AUTOMÁTICO DETECTADO</p>
-                            <p style="color: #888; font-size: 14px;">Pedra 10 identificada no minuto {minuto_pedra:02d}</p>
-                            <h1 style="font-size: 85px; margin: 10px 0; color: white;">{minuto_alvo:02d}</h1>
-                            <p style="font-size: 24px;">ENTRADA: <b>PRETO ⚫</b></p>
-                            <p style="color: #6b46c1; font-weight: bold;">CÁLCULO: {minuto_pedra} + 10 = {minuto_alvo:02d}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                encontrou_10 = True
-                break 
+    try:
+        # Puxa os dados reais
+        r = requests.get(URL_API, timeout=5)
+        # ACESSA A CHAVE 'records' QUE VOCÊ ME MANDOU
+        dados = r.json().get('records', [])
         
-        if not encontrou_10:
-            container_sinal.info("🔍 Analisando API... Aguardando a Pedra 10 sair no histórico.")
+        if dados:
+            # 1. ATUALIZA O HISTÓRICO VISUAL
+            with placeholder_hist.container():
+                st.write("🕒 HISTÓRICO AO VIVO:")
+                html = '<div class="historico-wrapper">'
+                for p in dados[:15]:
+                    html += f'<div class="bola cor-{p["color"]}">{p["roll"]}</div>'
+                html += '</div>'
+                st.markdown(html, unsafe_allow_html=True)
 
-    time.sleep(3) # Checa a API a cada 3 segundos
+            # 2. LÓGICA DA SOMA 10
+            # Vamos pegar a pedra 10 mais recente no histórico
+            encontrou = False
+            for item in dados:
+                if item['roll'] == 10:
+                    # Pega o minuto do campo 'created_at'
+                    # Ex: 2026-01-19T23:28:58.381Z -> Pega o '28'
+                    tempo_raw = item['created_at'].split('T')[1]
+                    minuto_pedra = int(tempo_raw.split(':')[1])
+                    
+                    minuto_alvo = (minuto_pedra + 10) % 60
+                    
+                    with placeholder_sinal.container():
+                        st.markdown(f"""
+                            <div class="card-sinal">
+                                <h3 style="color: #00ff00; margin:0;">🎯 SINAL IDENTIFICADO</h3>
+                                <p style="color: #888;">Pedra 10 no minuto {minuto_pedra:02d}</p>
+                                <h1 style="font-size: 85px; margin: 10px 0;">{minuto_alvo:02d}</h1>
+                                <p style="font-size: 24px;">ENTRADA: <b>PRETO ⚫</b></p>
+                                <p style="color: #6b46c1; font-weight: bold;">SOMA: {minuto_pedra} + 10</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    encontrou = True
+                    break
+            
+            if not encontrou:
+                placeholder_sinal.info("🔍 Monitorando... Aguardando Pedra 10.")
+        else:
+            st.error("API retornou vazia. Verifique o link.")
+
+    except Exception as e:
+        st.error(f"Erro de conexão: {e}")
+
+    # Pausa de 3 segundos para não sobrecarregar
+    time.sleep(3)
