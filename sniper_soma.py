@@ -1,90 +1,62 @@
 import streamlit as st
 import requests
 import time
+from datetime import datetime
 
-# --- CONFIGURAÇÃO TELA CHEIA E CORES ---
 st.set_page_config(page_title="SNIPER MS PRO", layout="centered")
 
+# --- ESTILO ---
 st.markdown("""
     <style>
-    .stApp { background-color: #000000; color: white; }
-    
-    .painel-sinal {
-        background: #0a0a0a;
-        border: 3px solid #00ff00;
-        border-radius: 20px;
-        padding: 50px;
-        text-align: center;
-        box-shadow: 0 0 30px rgba(0, 255, 0, 0.15);
-        margin-top: 20px;
+    .stApp { background-color: #000; color: white; }
+    .painel {
+        background: #0a0a0a; border: 2px solid #00ff00;
+        border-radius: 20px; padding: 40px; text-align: center;
     }
-    
-    .minuto-alvo {
-        font-size: 120px;
-        font-weight: bold;
-        color: #ffffff;
-        margin: 10px 0;
-        line-height: 1;
-    }
-    
-    .status-badge {
-        background: #00ff00;
-        color: black;
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 14px;
-    }
+    .numero-alvo { font-size: 100px; font-weight: bold; color: #fff; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- MOTOR DE LEITURA (API SMASH) ---
-URL_API = "https://api.smashup.com/api/v1/games/double/history"
-
-def monitorar():
-    try:
-        r = requests.get(URL_API, timeout=5)
-        # Entra direto nos records que você mandou
-        dados = r.json().get('records', [])
-        return dados
-    except:
-        return None
-
-# --- INTERFACE ---
 st.title("🎯 SNIPER MS PRO")
 placeholder = st.empty()
 
+URL_API = "https://api.smashup.com/api/v1/games/double/history"
+
 while True:
-    dados = monitorar()
-    
-    if dados:
-        # Busca o 10 mais recente
-        pedra_10 = next((item for item in dados if item['roll'] == 10), None)
+    try:
+        r = requests.get(URL_API, timeout=5)
+        dados = r.json().get('records', [])
         
-        with placeholder.container():
-            if pedra_10:
-                # Pega o minuto do seu JSON (ex: 23:28:58 -> 28)
-                minuto_bruto = int(pedra_10['created_at'][14:16])
-                minuto_alvo = (minuto_bruto + 10) % 60
-                
-                st.markdown(f"""
-                    <div class="painel-sinal">
-                        <span class="status-badge">● Sinal Identificado</span>
-                        <p style="color: #888; margin-top: 20px;">PEDRA 10 SAIU NO MINUTO: {minuto_bruto:02d}</p>
-                        <div style="color: #00ff00; font-size: 20px; font-weight: bold;">ENTRAR NO MINUTO:</div>
-                        <div class="minuto-alvo">{minuto_alvo:02d}</div>
-                        <div style="font-size: 30px; letter-spacing: 2px;">COR: <b>PRETO ⚫</b></div>
-                        <hr style="border: 0.5px solid #222; margin: 25px 0;">
-                        <p style="color: #6b46c1; font-weight: bold;">LÓGICA: SOMA 10 ATIVA</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                    <div style="text-align: center; padding: 100px; color: #444;">
-                        <h2>🔍 MONITORANDO...</h2>
-                        <p>Aguardando sair uma Pedra 10 no histórico para calcular o alvo.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-    time.sleep(2) # Rápido para não perder o tempo da aposta
+        if dados:
+            # Pega a pedra MAIS RECENTE (a primeira da lista)
+            ultima_pedra = dados[0]
+            minuto_agora = datetime.now().minute
+            
+            # Procura se existe um 10 nas últimas 3 rodadas para não ficar sinal velho
+            pedra_10 = next((item for item in dados[:3] if item['roll'] == 10), None)
+            
+            with placeholder.container():
+                if pedra_10:
+                    minuto_pedra = int(pedra_10['created_at'][14:16])
+                    minuto_alvo = (minuto_pedra + 10) % 60
+                    
+                    # SÓ MOSTRA O SINAL SE O MINUTO AINDA NÃO PASSOU
+                    if minuto_agora <= minuto_alvo or (minuto_agora > 50 and minuto_alvo < 10):
+                        st.markdown(f"""
+                            <div class="painel">
+                                <h2 style="color: #00ff00;">● SINAL ATIVO</h2>
+                                <p>Pedra 10 detectada no minuto {minuto_pedra:02d}</p>
+                                <div class="numero-alvo">{minuto_alvo:02d}</div>
+                                <p style="font-size: 24px;">ENTRADA: <b>PRETO ⚫</b></p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info("⌛ Sinal expirado. Aguardando próxima Pedra 10...")
+                else:
+                    st.warning("🔍 Monitorando... Nenhuma Pedra 10 recente no histórico.")
+                    
+    except:
+        st.error("Erro ao conectar. Tentando novamente...")
+
+    time.sleep(5) # Espera 5 segundos para checar de novo
+
