@@ -3,111 +3,111 @@ import requests
 import time
 from datetime import datetime
 
-# --- CONFIGURAÇÃO VISUAL (SOMA PRO ORIGINAL) ---
+# --- CONFIGURAÇÃO VISUAL RAIZ ---
 st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
     
-    /* Lista Vertical de Cores (Estilo Blocos do Soma Pro) */
-    .caixa-item {
-        padding: 15px; border-radius: 4px; margin-bottom: 8px;
-        text-align: center; font-weight: bold; font-size: 18px;
+    /* Lista de Cores Vertical (Como era no início) */
+    .item-lista {
+        padding: 12px; border-radius: 4px; margin-bottom: 6px;
+        text-align: center; font-weight: bold; font-size: 16px;
         text-transform: uppercase;
     }
-    .c-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; } /* BRANCO */
-    .c-1 { background-color: #f12c4c; color: #fff; } /* VERMELHO */
-    .c-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; } /* PRETO */
+    .cor-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 8px #fff; }
+    .cor-1 { background-color: #f12c4c; color: #fff; }
+    .cor-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; }
 
-    /* Terminais (Horários na Direita) */
-    .terminal-card {
-        background: #111; border-left: 6px solid #f12c4c;
-        padding: 20px; margin-bottom: 12px; border-radius: 4px;
+    /* Coluna de Terminais (Horários) */
+    .card-brancos {
+        background: #111; border-left: 5px solid #00ff00;
+        padding: 15px; margin-bottom: 10px; border-radius: 0 5px 5px 0;
     }
     
-    /* Painel Central de Sinal */
-    .alerta-sinal {
-        background: #000; border: 3px solid #f12c4c;
-        border-radius: 15px; padding: 60px; text-align: center;
+    /* Painel de Sinal Central */
+    .bloco-sinal {
+        background: #000; border: 2px solid #00ff00;
+        border-radius: 10px; padding: 40px; text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏹 ALGORITMO SOMA PRO - BLAZE")
+st.title("🏹 ALGORITMO SOMA PRO")
 
-# Layout de 3 Colunas: Histórico | Sinal | Terminais
-col_hist, col_sinal, col_term = st.columns([1, 1.8, 1])
+# Estrutura de 3 Colunas idêntica à que você usava
+col_hist, col_aviso, col_term = st.columns([1, 1.5, 1])
 
 with col_hist:
-    st.markdown("### 🕒 LISTA CORES")
+    st.subheader("🕒 LISTA CORES")
     area_lista = st.empty()
 
-with col_sinal:
-    st.markdown("### 🎯 ENTRADA")
+with col_aviso:
+    st.subheader("🎯 SINAL")
     area_sinal = st.empty()
 
 with col_term:
-    st.markdown("### ⚪ TERMINAIS")
+    st.subheader("⚪ TERMINAIS")
     area_brancos = st.empty()
 
-# URL DA API ENCONTRADA NOS SEUS ARQUIVOS (BLAZE)
-URL_API = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
+# --- CONEXÃO ESTÁVEL (BLAZE API) ---
+URL = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0",
+    "Accept": "application/json"
+}
 
-# Memória para não perder os horários dos brancos na tela
-if 'lista_brancos' not in st.session_state:
-    st.session_state.lista_brancos = []
+# Memória para os horários dos brancos
+if 'historico_brancos' not in st.session_state:
+    st.session_state.historico_brancos = []
 
 while True:
     try:
-        # Puxa os resultados reais da Blaze
-        r = requests.get(URL_API, timeout=10)
-        dados = r.json()
+        # Criando uma sessão para evitar o erro de "Reconectando"
+        with requests.Session() as s:
+            r = s.get(URL, headers=HEADERS, timeout=10)
+            dados = r.json()
         
         if dados:
-            # 1. LISTA VERTICAL (Lado Esquerdo - Sem bolinhas)
+            # 1. ATUALIZA LISTA DE CORES (Esquerda)
             with area_lista.container():
-                for item in dados[:12]:
-                    cor = item['color']
-                    num = item['roll']
-                    label = "BRANCO" if cor == 0 else ("VERMELHO" if cor == 1 else "PRETO")
-                    st.markdown(f'<div class="caixa-item c-{cor}">{label} ({num})</div>', unsafe_allow_html=True)
+                for d in dados[:10]:
+                    c = d['color']
+                    n = d['roll']
+                    nome = "BRANCO" if c == 0 else ("VERMELHO" if c == 1 else "PRETO")
+                    st.markdown(f'<div class="item-lista cor-{c}">{nome} ({n})</div>', unsafe_allow_html=True)
 
-            # 2. SINAL (Centro - Limpo e Direto)
-            ultima_cor = dados[0]['color']
-            # Lógica simples de inversão baseada nos seus scripts
-            sugestao = "PRETO ⚫" if ultima_cor == 1 else "VERMELHO 🔴"
-            if ultima_cor == 0: sugestao = "AGUARDAR..."
+            # 2. ATUALIZA SINAL (Centro)
+            ultima = dados[0]['color']
+            cor_entrada = "PRETO ⚫" if ultima == 1 else "VERMELHO 🔴"
+            if ultima == 0: cor_entrada = "AGUARDAR..."
             
             with area_sinal.container():
                 st.markdown(f"""
-                    <div class="alerta-sinal">
-                        <h1 style="color: white; margin:0;">SINAL DETECTADO</h1>
-                        <div style="font-size: 55px; font-weight: bold; margin: 30px 0;">{sugestao}</div>
-                        <p style="background: white; color: black; padding: 10px; font-weight: bold; display: inline-block; border-radius: 5px;">
-                            COBRIR O BRANCO ⚪
-                        </p>
+                    <div class="bloco-sinal">
+                        <h2 style="color: #00ff00;">ENTRADA CONFIRMADA</h2>
+                        <div style="font-size: 45px; font-weight: bold; margin: 20px 0;">{cor_entrada}</div>
+                        <p style="background: white; color: black; padding: 5px; font-weight: bold; display: inline-block;">PROTEGER NO BRANCO ⚪</p>
                     </div>
                 """, unsafe_allow_html=True)
 
-            # 3. TERMINAIS (Lado Direito - Pega o horário atual quando sai branco)
+            # 3. ATUALIZA TERMINAIS (Direita - Horários)
             if dados[0]['color'] == 0:
-                hora_minuto = datetime.now().strftime("%H:%M")
-                if not st.session_state.lista_brancos or st.session_state.lista_brancos[0] != hora_minuto:
-                    st.session_state.lista_brancos.insert(0, hora_minuto)
+                agora = datetime.now().strftime("%H:%M")
+                if not st.session_state.historico_brancos or st.session_state.historico_brancos[0] != agora:
+                    st.session_state.historico_brancos.insert(0, agora)
 
             with area_brancos.container():
-                if not st.session_state.lista_brancos:
-                    st.write("Monitorando novos brancos...")
-                for b in st.session_state.lista_brancos[:8]:
+                for h in st.session_state.historico_brancos[:8]:
                     st.markdown(f"""
-                        <div class="terminal-card">
-                            <small style="color: #666;">BRANCO ÀS:</small><br>
-                            <b style="font-size: 28px;">{b}</b>
+                        <div class="card-brancos">
+                            <span style="color: #666; font-size: 12px;">HORÁRIO VICIADO</span><br>
+                            <b style="font-size: 24px;">{h}</b>
                         </div>
                     """, unsafe_allow_html=True)
-
-    except Exception:
-        area_sinal.warning("Conectando à plataforma...")
+                    
+    except Exception as e:
+        area_sinal.warning("Sincronizando com a mesa... Aguarde.")
     
-    time.sleep(5)
+    time.sleep(8) # Intervalo maior para evitar bloqueio
