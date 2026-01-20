@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import time
 
-# --- CONFIGURAÇÃO DE TELA ---
+# --- ESTILO SNIPER ORIGINAL ---
 st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
 
 st.markdown("""
@@ -32,21 +32,22 @@ st.title("🏹 SNIPER MS PRO")
 area_topo = st.empty()
 area_meio = st.empty()
 
-# URL DA API E HEADERS PARA EVITAR BLOQUEIO
+# URL E DADOS DE ACESSO
 URL_API = "https://api.smashup.com/api/v1/games/double/history"
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    "Accept": "application/json"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Referer": "https://www.smashup.com/"
 }
 
 while True:
     try:
-        # Tenta buscar com headers de um navegador real
-        r = requests.get(URL_API, headers=HEADERS, timeout=10)
+        # Tenta a conexão com headers de navegador real
+        sessao = requests.Session()
+        r = sessao.get(URL_API, headers=HEADERS, timeout=15)
         dados = r.json().get('records', [])
         
         if dados:
-            # 1. MOSTRA AS BOLINHAS (HISTÓRICO)
+            # 1. MOSTRA O HISTÓRICO DE BOLINHAS (O QUE VOCÊ QUERIA)
             with area_topo.container():
                 st.write("🕒 ÚLTIMOS RESULTADOS:")
                 html_bolas = '<div class="historico-container">'
@@ -55,7 +56,7 @@ while True:
                 html_bolas += '</div>'
                 st.markdown(html_bolas, unsafe_allow_html=True)
 
-            # 2. MOSTRA O SINAL
+            # 2. MOSTRA O SINAL LIMPO
             ultima = dados[0]
             sugestao = "PRETO ⚫" if ultima['color'] == 1 else "VERMELHO 🔴"
             
@@ -70,9 +71,9 @@ while True:
                     </div>
                 """, unsafe_allow_html=True)
         else:
-            area_meio.warning("Conectado, aguardando dados...")
+            area_meio.warning("Aguardando novos dados da plataforma...")
 
-    except Exception as e:
-        area_meio.error("⚠️ Falha na conexão com a plataforma. Tentando burlar o bloqueio...")
+    except Exception:
+        area_meio.error("⚠️ Falha na conexão. A plataforma pode estar instável. Tentando reconectar...")
 
-    time.sleep(5)
+    time.sleep(6)
