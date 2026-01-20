@@ -75,7 +75,7 @@ while True:
 
             # 2. SINAL (Centro - Limpo e Direto)
             ultima_cor = dados[0]['color']
-            # Lógica simples de inversão para o sinal
+            # Lógica simples de inversão baseada nos seus scripts
             sugestao = "PRETO ⚫" if ultima_cor == 1 else "VERMELHO 🔴"
             if ultima_cor == 0: sugestao = "AGUARDAR..."
             
@@ -97,6 +97,8 @@ while True:
                     st.session_state.lista_brancos.insert(0, hora_minuto)
 
             with area_brancos.container():
+                if not st.session_state.lista_brancos:
+                    st.write("Monitorando novos brancos...")
                 for b in st.session_state.lista_brancos[:8]:
                     st.markdown(f"""
                         <div class="terminal-card">
@@ -106,6 +108,6 @@ while True:
                     """, unsafe_allow_html=True)
 
     except Exception:
-        area_sinal.warning("Conectando à Blaze...")
+        area_sinal.warning("Conectando à plataforma...")
     
     time.sleep(5)
