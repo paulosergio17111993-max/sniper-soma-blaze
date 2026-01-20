@@ -3,96 +3,75 @@ import requests
 import time
 from datetime import datetime
 
-# --- CONFIGURAÇÃO VISUAL RAIZ ---
-st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="wide")
+# Configuração Soma Pro
+st.set_page_config(page_title="SOMA PRO", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
-    .item-lista {
-        padding: 15px; border-radius: 4px; margin-bottom: 8px;
-        text-align: center; font-weight: bold; font-size: 18px;
-    }
-    .cor-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; }
-    .cor-1 { background-color: #f12c4c; color: #fff; }
-    .cor-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; }
-    
-    .card-term {
-        background: #111; border-left: 5px solid #00ff00;
-        padding: 20px; margin-bottom: 12px;
-    }
-    .painel-sinal {
-        background: #000; border: 3px solid #00ff00;
-        border-radius: 15px; padding: 50px; text-align: center;
-    }
+    .caixa { padding: 15px; border-radius: 4px; margin-bottom: 8px; text-align: center; font-weight: bold; font-size: 18px; }
+    .c-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; }
+    .c-1 { background-color: #f12c4c; color: #fff; }
+    .c-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🏹 ALGORITMO SOMA PRO")
 
-col1, col2, col3 = st.columns([1, 1.8, 1])
+col1, col2, col3 = st.columns([1, 2, 1])
+area_lista = col1.empty()
+area_sinal = col2.empty()
+area_term = col3.empty()
 
-with col1:
-    st.markdown("### 🕒 LISTA CORES")
-    area_lista = st.empty()
-with col2:
-    st.markdown("### 🎯 ENTRADA")
-    area_sinal = st.empty()
-with col3:
-    st.markdown("### ⚪ TERMINAIS")
-    area_brancos = st.empty()
+if 'brancos' not in st.session_state:
+    st.session_state.brancos = []
 
-if 'brancos_viciados' not in st.session_state:
-    st.session_state.brancos_viciados = []
-
-# --- CONEXÃO DISFARÇADA ---
 def pegar_dados():
-    url = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1"
-    }
+    # Link direto da API atualizada
+    url = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/history?amount=10"
+    headers = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X)"}
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        return response.json()
+        r = requests.get(url, headers=headers, timeout=10)
+        # O segredo está aqui: a nova API retorna uma lista direta ou dentro de 'records'
+        dados = r.json()
+        return dados.get('records', dados) if isinstance(dados, dict) else dados
     except:
         return None
 
 while True:
-    dados = pegar_dados()
+    lista = pegar_dados()
     
-    if dados:
-        # 1. LISTA (ESQUERDA)
+    if lista and len(lista) > 0:
+        # 🕒 LISTA CORES
         with area_lista.container():
-            for d in dados[:10]:
-                c = d['color']
-                n = d['roll']
+            st.markdown("### 🕒 LISTA CORES")
+            for d in lista[:10]:
+                c = d.get('color', 0)
                 txt = "BRANCO" if c == 0 else ("VERMELHO" if c == 1 else "PRETO")
-                st.markdown(f'<div class="item-lista cor-{c}">{txt} ({n})</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="caixa c-{c}">{txt}</div>', unsafe_allow_html=True)
 
-        # 2. SINAL (CENTRO)
-        ultima = dados[0]['color']
-        sinal = "PRETO ⚫" if ultima == 1 else "VERMELHO 🔴"
-        if ultima == 0: sinal = "AGUARDAR..."
-        
+        # 🎯 SINAL
+        ultima_cor = lista[0].get('color', 0)
+        sugestao = "PRETO ⚫" if ultima_cor == 1 else "VERMELHO 🔴"
         with area_sinal.container():
             st.markdown(f"""
-                <div class="painel-sinal">
-                    <h1 style="color: #00ff00; margin:0;">SINAL CONFIRMADO</h1>
-                    <div style="font-size: 50px; font-weight: bold; margin: 25px 0;">{sinal}</div>
-                    <p style="background:white; color:black; padding:10px; font-weight:bold; display:inline-block; border-radius:5px;">COBRIR BRANCO ⚪</p>
+                <div style="border:3px solid #00ff00; padding:40px; text-align:center; border-radius:15px;">
+                    <h1 style="color:#00ff00;">ENTRADA CONFIRMADA</h1>
+                    <div style="font-size:55px; font-weight:bold; margin:20px 0;">{sugestao}</div>
+                    <p style="background:white; color:black; padding:10px; font-weight:bold; display:inline-block;">COBRIR BRANCO ⚪</p>
                 </div>
             """, unsafe_allow_html=True)
 
-        # 3. TERMINAIS (DIREITA)
-        if dados[0]['color'] == 0:
-            hora = datetime.now().strftime("%H:%M")
-            if not st.session_state.brancos_viciados or st.session_state.brancos_viciados[0] != hora:
-                st.session_state.brancos_viciados.insert(0, hora)
-
-        with area_brancos.container():
-            for b in st.session_state.brancos_viciados[:8]:
-                st.markdown(f'<div class="card-term"><small>BRANCO ÀS:</small><br><b style="font-size:25px;">{b}</b></div>', unsafe_allow_html=True)
+        # ⚪ TERMINAIS
+        if ultima_cor == 0:
+            h = datetime.now().strftime("%H:%M")
+            if not st.session_state.brancos or st.session_state.brancos[0] != h:
+                st.session_state.brancos.insert(0, h)
+        with area_term.container():
+            st.markdown("### ⚪ TERMINAIS")
+            for b in st.session_state.brancos[:5]:
+                st.success(f"BRANCO ÀS: {b}")
     else:
-        area_sinal.warning("Sincronizando... Se demorar, recarregue a página.")
-    
-    time.sleep(12)
+        area_sinal.warning("Aguardando novos giros da mesa...")
+
+    time.sleep(10)
