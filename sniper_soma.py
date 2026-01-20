@@ -10,7 +10,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
     
-    /* Lista de Cores Vertical (Como era no início) */
+    /* Lista de Cores Vertical (Como era antes: sem bolinhas) */
     .item-lista {
         padding: 12px; border-radius: 4px; margin-bottom: 6px;
         text-align: center; font-weight: bold; font-size: 16px;
@@ -20,7 +20,7 @@ st.markdown("""
     .cor-1 { background-color: #f12c4c; color: #fff; }
     .cor-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; }
 
-    /* Coluna de Terminais (Horários) */
+    /* Coluna de Terminais (Horários dos Brancos) */
     .card-brancos {
         background: #111; border-left: 5px solid #00ff00;
         padding: 15px; margin-bottom: 10px; border-radius: 0 5px 5px 0;
@@ -36,7 +36,7 @@ st.markdown("""
 
 st.title("🏹 ALGORITMO SOMA PRO")
 
-# Estrutura de 3 Colunas idêntica à que você usava
+# Estrutura de 3 Colunas idêntica à que você usava antes
 col_hist, col_aviso, col_term = st.columns([1, 1.5, 1])
 
 with col_hist:
@@ -64,7 +64,7 @@ if 'historico_brancos' not in st.session_state:
 
 while True:
     try:
-        # Criando uma sessão para evitar o erro de "Reconectando"
+        # Criando uma sessão para evitar o erro de bloqueio/reconexão
         with requests.Session() as s:
             r = s.get(URL, headers=HEADERS, timeout=10)
             dados = r.json()
@@ -99,6 +99,8 @@ while True:
                     st.session_state.historico_brancos.insert(0, agora)
 
             with area_brancos.container():
+                if not st.session_state.historico_brancos:
+                    st.write("Aguardando branco...")
                 for h in st.session_state.historico_brancos[:8]:
                     st.markdown(f"""
                         <div class="card-brancos">
@@ -108,6 +110,6 @@ while True:
                     """, unsafe_allow_html=True)
                     
     except Exception as e:
-        area_sinal.warning("Sincronizando com a mesa... Aguarde.")
+        area_sinal.warning("Sincronizando com a mesa... Aguarde alguns segundos.")
     
-    time.sleep(8) # Intervalo maior para evitar bloqueio
+    time.sleep(10) # Intervalo maior para o Streamlit não bloquear a conexão
