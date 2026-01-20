@@ -10,7 +10,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
     
-    /* Lista Vertical de Cores (Estilo Blocos) */
+    /* Lista Vertical de Cores (Estilo Blocos do Soma Pro) */
     .caixa-item {
         padding: 15px; border-radius: 4px; margin-bottom: 8px;
         text-align: center; font-weight: bold; font-size: 18px;
@@ -36,6 +36,7 @@ st.markdown("""
 
 st.title("🏹 ALGORITMO SOMA PRO - BLAZE")
 
+# Layout de 3 Colunas: Histórico | Sinal | Terminais
 col_hist, col_sinal, col_term = st.columns([1, 1.8, 1])
 
 with col_hist:
@@ -50,10 +51,10 @@ with col_term:
     st.markdown("### ⚪ TERMINAIS")
     area_brancos = st.empty()
 
-# URL DA API ENCONTRADA NOS SEUS ARQUIVOS
+# URL DA API ENCONTRADA NOS SEUS ARQUIVOS (BLAZE)
 URL_API = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
 
-# Memória persistente para não perder os horários dos brancos ao atualizar
+# Memória para não perder os horários dos brancos na tela
 if 'lista_brancos' not in st.session_state:
     st.session_state.lista_brancos = []
 
@@ -66,46 +67,45 @@ while True:
         if dados:
             # 1. LISTA VERTICAL (Lado Esquerdo - Sem bolinhas)
             with area_lista.container():
-                # Pega os últimos 12 resultados
                 for item in dados[:12]:
                     cor = item['color']
                     num = item['roll']
                     label = "BRANCO" if cor == 0 else ("VERMELHO" if cor == 1 else "PRETO")
                     st.markdown(f'<div class="caixa-item c-{cor}">{label} ({num})</div>', unsafe_allow_html=True)
 
-            # 2. SINAL (Centro - Direto ao ponto)
+            # 2. SINAL (Centro - Limpo e Direto)
             ultima_cor = dados[0]['color']
+            # Lógica simples de inversão para o sinal
             sugestao = "PRETO ⚫" if ultima_cor == 1 else "VERMELHO 🔴"
-            if ultima_cor == 0: sugestao = "AGUARDAR GIRO..."
+            if ultima_cor == 0: sugestao = "AGUARDAR..."
             
             with area_sinal.container():
                 st.markdown(f"""
                     <div class="alerta-sinal">
                         <h1 style="color: white; margin:0;">SINAL DETECTADO</h1>
                         <div style="font-size: 55px; font-weight: bold; margin: 30px 0;">{sugestao}</div>
-                        <p style="background: white; color: black; padding: 10px; font-weight: bold; display: inline-block;">PROTEGER NO BRANCO ⚪</p>
+                        <p style="background: white; color: black; padding: 10px; font-weight: bold; display: inline-block; border-radius: 5px;">
+                            COBRIR O BRANCO ⚪
+                        </p>
                     </div>
                 """, unsafe_allow_html=True)
 
             # 3. TERMINAIS (Lado Direito - Pega o horário atual quando sai branco)
             if dados[0]['color'] == 0:
                 hora_minuto = datetime.now().strftime("%H:%M")
-                if hora_minuto not in st.session_state.lista_brancos:
+                if not st.session_state.lista_brancos or st.session_state.lista_brancos[0] != hora_minuto:
                     st.session_state.lista_brancos.insert(0, hora_minuto)
 
             with area_brancos.container():
-                if st.session_state.lista_brancos:
-                    for b in st.session_state.lista_brancos[:8]:
-                        st.markdown(f"""
-                            <div class="terminal-card">
-                                <small style="color: #666;">BRANCO ÀS:</small><br>
-                                <b style="font-size: 28px;">{b}</b>
-                            </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.write("Monitorando novos brancos...")
+                for b in st.session_state.lista_brancos[:8]:
+                    st.markdown(f"""
+                        <div class="terminal-card">
+                            <small style="color: #666;">BRANCO ÀS:</small><br>
+                            <b style="font-size: 28px;">{b}</b>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-    except Exception as e:
-        area_sinal.warning("Aguardando atualização da Blaze...")
+    except Exception:
+        area_sinal.warning("Conectando à Blaze...")
     
     time.sleep(5)
