@@ -1,62 +1,115 @@
 import streamlit as st
 import requests
 import time
-from datetime import datetime
 
-st.set_page_config(page_title="SNIPER MS PRO", layout="centered")
+# --- CONFIGURAÇÃO VISUAL SNIPER ---
+st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
 
-# --- ESTILO ---
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: white; }
-    .painel {
-        background: #0a0a0a; border: 2px solid #00ff00;
-        border-radius: 20px; padding: 40px; text-align: center;
+    .stApp { background-color: #050505; color: white; }
+    
+    /* Card do Sinal Principal */
+    .card-sinal {
+        background: #000;
+        border: 3px solid #00ff00;
+        border-radius: 20px;
+        padding: 50px;
+        text-align: center;
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
     }
-    .numero-alvo { font-size: 100px; font-weight: bold; color: #fff; }
+    
+    .status-online {
+        color: #00ff00;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 2px;
+    }
+
+    .cor-entrada {
+        font-size: 40px;
+        font-weight: bold;
+        margin: 20px 0;
+    }
+
+    /* Lista de Brancos */
+    .item-branco {
+        background: #111;
+        border-left: 5px solid #fff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .bola-branca {
+        width: 35px; height: 35px; background: #fff;
+        border-radius: 5px; color: #000;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎯 SNIPER MS PRO")
-placeholder = st.empty()
-
+# --- FUNÇÃO DE BUSCA NA API ---
 URL_API = "https://api.smashup.com/api/v1/games/double/history"
 
-while True:
+def buscar_dados():
     try:
         r = requests.get(URL_API, timeout=5)
-        dados = r.json().get('records', [])
-        
-        if dados:
-            # Pega a pedra MAIS RECENTE (a primeira da lista)
-            ultima_pedra = dados[0]
-            minuto_agora = datetime.now().minute
-            
-            # Procura se existe um 10 nas últimas 3 rodadas para não ficar sinal velho
-            pedra_10 = next((item for item in dados[:3] if item['roll'] == 10), None)
-            
-            with placeholder.container():
-                if pedra_10:
-                    minuto_pedra = int(pedra_10['created_at'][14:16])
-                    minuto_alvo = (minuto_pedra + 10) % 60
-                    
-                    # SÓ MOSTRA O SINAL SE O MINUTO AINDA NÃO PASSOU
-                    if minuto_agora <= minuto_alvo or (minuto_agora > 50 and minuto_alvo < 10):
-                        st.markdown(f"""
-                            <div class="painel">
-                                <h2 style="color: #00ff00;">● SINAL ATIVO</h2>
-                                <p>Pedra 10 detectada no minuto {minuto_pedra:02d}</p>
-                                <div class="numero-alvo">{minuto_alvo:02d}</div>
-                                <p style="font-size: 24px;">ENTRADA: <b>PRETO ⚫</b></p>
-                            </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.info("⌛ Sinal expirado. Aguardando próxima Pedra 10...")
-                else:
-                    st.warning("🔍 Monitorando... Nenhuma Pedra 10 recente no histórico.")
-                    
+        return r.json().get('records', [])
     except:
-        st.error("Erro ao conectar. Tentando novamente...")
+        return []
 
-    time.sleep(5) # Espera 5 segundos para checar de novo
+# --- LAYOUT ---
+col1, col2 = st.columns([2, 1])
 
+with col1:
+    st.title("🏹 SNIPER MS PRO")
+    area_sinal = st.empty()
+
+with col2:
+    st.markdown("### ⚪ HISTÓRICO DE BRANCOS")
+    area_brancos = st.empty()
+
+# --- LOOP AO VIVO ---
+while True:
+    dados = buscar_dados()
+    
+    if dados:
+        # 1. ATUALIZA SINAL DE ENTRADA
+        # (Aqui o sinal fica fixo ou baseado na última cor que saiu)
+        ultima_cor = "PRETO ⚫" if dados[0]['color'] == 2 else "VERMELHO 🔴"
+        
+        with area_sinal.container():
+            st.markdown(f"""
+                <div class="card-sinal">
+                    <div class="status-online">● Sniper Conectado</div>
+                    <div style="font-size: 20px; margin-top: 10px;">PRÓXIMA ENTRADA:</div>
+                    <div class="cor-entrada">{ultima_cor}</div>
+                    <div style="background: #1a1a1a; padding: 10px; border-radius: 10px;">
+                        <span style="color: #fff;">PROTEGER NO <b>BRANCO ⚪</b></span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # 2. LISTA DE BRANCOS (Filtra apenas o roll 0)
+        with area_brancos.container():
+            brancos = [d for d in dados if d['roll'] == 0]
+            if brancos:
+                for b in brancos[:8]: # Mostra os últimos 8 brancos
+                    hora = b['created_at'][11:16]
+                    st.markdown(f"""
+                        <div class="item-branco">
+                            <div class="bola-branca">0</div>
+                            <div style="font-weight: bold;">BRANCO CONFIRMADO</div>
+                            <div style="color: #666;">{hora}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.write("Monitorando brancos...")
+
+    time.sleep(3)
