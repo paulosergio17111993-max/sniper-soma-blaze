@@ -2,31 +2,30 @@ import streamlit as st
 import requests
 import time
 
-# --- CONFIGURAÇÃO DE TELA ---
+# --- CONFIGURAÇÃO DE INTERFACE RAIZ ---
 st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
     
-    /* Lista de Cores Vertical */
+    /* Lista de Cores Vertical (Coluna 1) */
     .caixa-cor {
         padding: 12px; border-radius: 6px; margin-bottom: 6px;
         font-weight: bold; text-align: center; font-size: 16px;
-        text-transform: uppercase;
     }
     .c-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; } /* Branco */
     .c-1 { background-color: #f12c4c; color: #fff; } /* Vermelho */
     .c-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; } /* Preto */
 
-    /* Terminais de Branco (Horários) */
+    /* Terminais de Branco (Coluna 3) */
     .card-terminal {
         background: #111; border-left: 5px solid #ffffff;
         padding: 15px; margin-bottom: 10px; border-radius: 0 10px 10px 0;
     }
     
-    /* Painel de Sinal Central */
-    .alerta-entrada {
+    /* Painel de Entrada (Coluna 2) */
+    .alerta-central {
         background: #000; border: 3px solid #00ff00;
         border-radius: 20px; padding: 50px; text-align: center;
         box-shadow: 0 0 25px rgba(0,255,0,0.3);
@@ -36,12 +35,12 @@ st.markdown("""
 
 st.title("🏹 SNIPER MS PRO")
 
-# Layout de 3 Colunas (Lista | Sinal | Terminais)
+# Layout de 3 Colunas: Cores | Entrada | Terminais
 col1, col2, col3 = st.columns([1, 1.8, 1])
 
 with col1:
-    st.markdown("### 🕒 HISTÓRICO")
-    area_historico = st.empty()
+    st.markdown("### 🕒 CORES")
+    area_cores = st.empty()
 
 with col2:
     st.markdown("### 🎯 ENTRADA")
@@ -51,47 +50,46 @@ with col3:
     st.markdown("### ⚪ TERMINAIS")
     area_terminais = st.empty()
 
+# URL DA API DA SMASHUP
 URL_API = "https://api.smashup.com/api/v1/games/double/history"
 
 while True:
     try:
-        # Puxando os dados da API que você mandou
         r = requests.get(URL_API, timeout=10)
         dados = r.json()
         
-        # Garantindo que estamos lendo a lista de registros
+        # Ajuste para ler a lista de registros que você mandou
         records = dados.get('records', []) if isinstance(dados, dict) else dados
         
         if records:
-            # 1. LISTA DE CORES VERTICAL (Baseado no seu JSON)
-            with area_historico.container():
+            # 1. PREENCHE A LISTA VERTICAL DE CORES
+            with area_cores.container():
                 for p in records[:15]:
                     nome = "BRANCO" if p['color'] == 0 else ("VERMELHO" if p['color'] == 1 else "PRETO")
                     st.markdown(f'<div class="caixa-cor c-{p["color"]}">{nome} ({p["roll"]})</div>', unsafe_allow_html=True)
 
-            # 2. SINAL CENTRAL (Lógica de Cor)
+            # 2. GERA O SINAL DE ENTRADA
             ultima = records[0]
-            # Estratégia: Se veio Preto, entra Vermelho (e vice-versa)
-            cor_sinal = "VERMELHO 🔴" if ultima['color'] == 2 else "PRETO ⚫"
-            if ultima['color'] == 0: cor_sinal = "AGUARDAR GIRO..."
+            sugestao = "VERMELHO 🔴" if ultima['color'] == 2 else "PRETO ⚫"
+            if ultima['color'] == 0: sugestao = "AGUARDAR GIRO..."
 
             with area_sinal.container():
                 st.markdown(f"""
-                    <div class="alerta-entrada">
+                    <div class="alerta-central">
                         <h1 style="color: #00ff00; margin:0;">SINAL CONFIRMADO</h1>
-                        <div style="font-size: 50px; font-weight: bold; margin: 25px 0;">{cor_sinal}</div>
+                        <div style="font-size: 50px; font-weight: bold; margin: 25px 0;">{sugestao}</div>
                         <p style="background: white; color: black; padding: 10px; border-radius: 5px; font-weight: bold; display: inline-block;">
                             COBRIR O BRANCO ⚪
                         </p>
                     </div>
                 """, unsafe_allow_html=True)
 
-            # 3. TERMINAIS VICIADOS (Extraindo os horários dos Brancos do seu JSON)
+            # 3. FILTRA OS TERMINAIS DE BRANCO (Pelo created_at)
             with area_terminais.container():
                 brancos = [d for d in records if d['color'] == 0]
                 if brancos:
                     for b in brancos[:8]:
-                        # Pega o campo 'created_at' e isola a hora (HH:MM)
+                        # Pega o horário (HH:MM) do campo que você enviou
                         horario = b['created_at'][11:16]
                         st.markdown(f"""
                             <div class="card-terminal">
@@ -100,9 +98,9 @@ while True:
                             </div>
                         """, unsafe_allow_html=True)
                 else:
-                    st.info("Monitorando Brancos...")
+                    st.info("Buscando padrões de Branco...")
 
-    except Exception as e:
-        st.error("Erro ao conectar na API...")
+    except Exception:
+        pass
     
     time.sleep(5)
