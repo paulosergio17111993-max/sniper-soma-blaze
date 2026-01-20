@@ -2,78 +2,100 @@ import streamlit as st
 import requests
 import time
 
-# --- ESTILO SNIPER ORIGINAL ---
+# --- CONFIGURAÇÃO DE TELA E ESTILO ANTIGO ---
 st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: white; }
-    .historico-container {
-        display: flex; justify-content: center; padding: 15px;
-        background: #111; border-radius: 10px; margin-bottom: 25px;
+    
+    /* Lista de Cores (Vertical) */
+    .item-historico {
+        padding: 10px; border-radius: 5px; margin-bottom: 5px;
+        font-weight: bold; text-align: center; text-transform: uppercase;
     }
-    .bola {
-        width: 38px; height: 38px; border-radius: 6px;
-        display: flex; align-items: center; justify-content: center;
-        font-weight: bold; margin: 0 6px;
+    .bg-0 { background-color: #ffffff; color: #000; } /* Branco */
+    .bg-1 { background-color: #f12c4c; color: #fff; } /* Vermelho */
+    .bg-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; } /* Preto */
+
+    /* Terminais de Branco (Lista Lateral) */
+    .card-branco {
+        background: #111; border-left: 4px solid #fff;
+        padding: 10px; margin-bottom: 8px; border-radius: 0 5px 5px 0;
     }
-    .cor-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; }
-    .cor-1 { background-color: #f12c4c; color: white; }
-    .cor-2 { background-color: #2b2b2b; color: white; border: 1px solid #444; }
-    .alerta-sniper {
-        background: #000; border: 4px solid #00ff00;
-        border-radius: 20px; padding: 50px; text-align: center;
+    
+    /* Alerta de Entrada */
+    .alerta-entrada {
+        background: #000; border: 3px solid #00ff00;
+        border-radius: 15px; padding: 30px; text-align: center;
+        box-shadow: 0 0 15px rgba(0,255,0,0.2);
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏹 SNIPER MS PRO")
-
-area_topo = st.empty()
-area_meio = st.empty()
-
-# URL E DADOS DE ACESSO
+# URL DA API
 URL_API = "https://api.smashup.com/api/v1/games/double/history"
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Referer": "https://www.smashup.com/"
-}
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+st.title("🏹 SNIPER MS PRO - OPERACIONAL")
+
+# LAYOUT EM COLUNAS (Como era antes)
+col1, col2, col3 = st.columns([1.5, 1, 1])
+
+with col1:
+    st.subheader("🎯 PRÓXIMA ENTRADA")
+    area_sinal = st.empty()
+
+with col2:
+    st.subheader("🕒 LISTA DE CORES")
+    area_cores = st.empty()
+
+with col3:
+    st.subheader("⚪ TERMINAIS (BRANCO)")
+    area_brancos = st.empty()
 
 while True:
     try:
-        # Tenta a conexão com headers de navegador real
-        sessao = requests.Session()
-        r = sessao.get(URL_API, headers=HEADERS, timeout=15)
+        r = requests.get(URL_API, headers=HEADERS, timeout=10)
         dados = r.json().get('records', [])
         
         if dados:
-            # 1. MOSTRA O HISTÓRICO DE BOLINHAS (O QUE VOCÊ QUERIA)
-            with area_topo.container():
-                st.write("🕒 ÚLTIMOS RESULTADOS:")
-                html_bolas = '<div class="historico-container">'
-                for p in dados[:14]:
-                    html_bolas += f'<div class="bola cor-{p["color"]}">{p["roll"]}</div>'
-                html_bolas += '</div>'
-                st.markdown(html_bolas, unsafe_allow_html=True)
-
-            # 2. MOSTRA O SINAL LIMPO
+            # 1. SINAL DE ENTRADA
             ultima = dados[0]
-            sugestao = "PRETO ⚫" if ultima['color'] == 1 else "VERMELHO 🔴"
+            cor_nome = "PRETO ⚫" if ultima['color'] == 2 else "VERMELHO 🔴"
+            if ultima['color'] == 0: cor_nome = "BRANCO ⚪"
             
-            with area_meio.container():
+            with area_sinal.container():
                 st.markdown(f"""
-                    <div class="alerta-sniper">
-                        <h2 style="color: #00ff00; margin: 0;">SINAL CONFIRMADO</h2>
-                        <div style="font-size: 55px; font-weight: bold; margin: 15px 0;">{sugestao}</div>
-                        <p style="background: #fff; color: #000; padding: 10px; border-radius: 8px; font-weight: bold; display: inline-block;">
-                            COBRIR O BRANCO ⚪
-                        </p>
+                    <div class="alerta-entrada">
+                        <div style="color: #00ff00; font-weight: bold;">SINAL ANALISADO</div>
+                        <div style="font-size: 35px; margin: 15px 0;">{cor_nome}</div>
+                        <div style="font-size: 14px; color: #888;">PROTEGER NO BRANCO (0)</div>
                     </div>
                 """, unsafe_allow_html=True)
-        else:
-            area_meio.warning("Aguardando novos dados da plataforma...")
 
-    except Exception:
-        area_meio.error("⚠️ Falha na conexão. A plataforma pode estar instável. Tentando reconectar...")
+            # 2. LISTA DE CORES (VERTICAL)
+            with area_cores.container():
+                for p in dados[:12]:
+                    txt = "BRANCO" if p['color'] == 0 else ("VERMELHO" if p['color'] == 1 else "PRETO")
+                    st.markdown(f'<div class="item-historico bg-{p["color"]}">{txt} ({p["roll"]})</div>', unsafe_allow_html=True)
 
-    time.sleep(6)
+            # 3. LISTA DE BRANCOS (TERMINAIS VICIADOS)
+            with area_brancos.container():
+                brancos = [d for d in dados if d['color'] == 0]
+                if brancos:
+                    for b in brancos[:10]:
+                        hora = b['created_at'][11:16]
+                        st.markdown(f"""
+                            <div class="card-branco">
+                                <div style="font-size: 12px; color: #aaa;">BRANCO CONFIRMADO</div>
+                                <div style="font-weight: bold; font-size: 18px;">{hora}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.write("Monitorando terminais...")
+
+    except:
+        pass
+
+    time.sleep(5)
