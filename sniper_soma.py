@@ -3,87 +3,100 @@ import requests
 import time
 from datetime import datetime
 
-# --- CONFIGURAÇÃO DE INTERFACE ELITE ---
-st.set_page_config(page_title="SNIPER API LIVE", layout="centered")
+# --- CONFIGURAÇÃO DE DESIGN PROFISSIONAL ---
+st.set_page_config(page_title="SNIPER LIVE SCAN", layout="centered")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050505; }
-    .historico-real {
+    .stApp { background-color: #050505; color: white; }
+    
+    /* Barra de Histórico Horizontal */
+    .historico-container {
         display: flex;
         flex-direction: row;
-        background: #111;
-        padding: 10px;
+        background-color: #111;
+        padding: 12px;
         border-radius: 8px;
         border: 1px solid #333;
         margin-bottom: 20px;
-        overflow-x: auto;
+        overflow-x: hidden;
     }
+
     .bola {
-        min-width: 35px; height: 35px; border-radius: 5px;
+        min-width: 32px; height: 32px; border-radius: 4px;
         display: flex; align-items: center; justify-content: center;
-        margin: 0 4px; font-weight: bold; color: white;
+        font-weight: bold; font-size: 13px; color: white; margin-right: 8px;
     }
-    .cor-preto { background-color: #222; border: 1px solid #444; }
-    .cor-vermelho { background-color: #d32f2f; }
-    .cor-branco { background-color: #fff; color: #000; }
+
+    /* Cores das Pedras */
+    .cor-black { background-color: #2b2b2b; border: 1px solid #444; }
+    .cor-red { background-color: #f12c4c; }
+    .cor-white { background-color: #ffffff; color: #000; }
     
-    .painel-sinal {
-        background: #0d0d0d; border: 2px solid #6b46c1;
+    .card-sinal {
+        background: #0d0d0d; border: 2px solid #00ff00;
         border-radius: 15px; padding: 25px; text-align: center;
+        box-shadow: 0px 0px 15px rgba(0, 255, 0, 0.2);
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏹 SNIPER MS PRO - API CONNECT")
+st.title("🏹 SNIPER MS PRO")
+st.write("● MONITORANDO RODADAS AO VIVO...")
 
-# --- CONEXÃO COM A API DA PLATAFORMA ---
-def puxar_dados_api():
-    try:
-        # AQUI VOCÊ COLA O LINK DA API DA SUA PLATAFORMA
-        url = "URL_DA_API_AQUI" 
-        response = requests.get(url, timeout=5)
-        return response.json() # Retorna a lista de pedras do site
-    except:
-        # Se a API falhar, ele retorna vazio para não travar o site
-        return []
+# Espaços que atualizam em tempo real
+container_historico = st.empty()
+container_sinal = st.empty()
 
-# --- LOOP DE ATUALIZAÇÃO AO VIVO ---
-monitor = st.empty()
-
+# --- LOOP DE VARREDURA DA API ---
 while True:
-    with monitor.container():
-        # 1. Busca os dados direto na fonte
-        dados = puxar_dados_api()
+    try:
+        # 1. Puxa os dados da API (Substitua pela sua URL real)
+        # url = "URL_DA_SUA_PLATAFORMA"
+        # r = requests.get(url)
+        # dados = r.json()
         
-        if dados:
-            # Mostra o histórico igual ao site
-            html_hist = '<div class="historico-real">'
-            for p in dados[:15]: # Mostra as últimas 15 pedras
-                cor = "cor-preto" if p['color'] == 'black' else "cor-vermelho" if p['color'] == 'red' else "cor-branco"
+        # Simulação de rodadas para teste:
+        dados = [
+            {"value": 10, "color": "black", "time": datetime.now()}, # Supondo que saiu o 10 agora
+            {"value": 4, "color": "red"},
+            {"value": 12, "color": "black"},
+            {"value": 0, "color": "white"}
+        ]
+
+        # 2. Mostra o histórico na tela (as bolinhas passando)
+        with container_historico.container():
+            html_hist = '<div class="historico-container">'
+            for p in dados[:14]:
+                cor = f"cor-{p['color']}"
                 html_hist += f'<div class="bola {cor}">{p["value"]}</div>'
             html_hist += '</div>'
             st.markdown(html_hist, unsafe_allow_html=True)
+
+        # 3. Lógica: Se a última pedra for 10, calcula Minuto + 10
+        ultima_rodada = dados[0]
+        
+        if ultima_rodada['value'] == 10:
+            # Pega o minuto da hora que a pedra saiu
+            minuto_saida = datetime.now().minute
+            minuto_alvo = (minuto_saida + 10) % 60
             
-            # 2. Lógica Automática da Pedra 10
-            ultima_pedra = dados[0] # A pedra que acabou de sair agora
-            
-            if ultima_pedra['value'] == 10:
-                min_agora = datetime.now().minute
-                min_alvo = (min_agora + 10) % 60
-                
+            with container_sinal.container():
                 st.markdown(f"""
-                    <div class="painel-sinal">
-                        <h2 style="color: #00ff00;">🎯 ENTRADA DETECTADA VIA API</h2>
-                        <p>Gatilho: Pedra 10 às {datetime.now().strftime('%H:%M:%S')}</p>
-                        <h1 style="font-size: 70px; color: white;">{min_alvo:02d}</h1>
-                        <p style="font-size: 20px;">COR: <b>PRETO ⚫</b></p>
+                    <div class="card-sinal">
+                        <h2 style="color: #00ff00; margin:0;">🎯 GATILHO DETECTADO!</h2>
+                        <p style="color: #ccc;">A Pedra 10 saiu no minuto <b>{minuto_saida:02d}</b></p>
+                        <hr style="border: 0.5px solid #333;">
+                        <p style="font-size: 18px; margin:0;">ENTRADA NO MINUTO:</p>
+                        <h1 style="font-size: 80px; margin: 10px 0; color: white;">{minuto_alvo:02d}</h1>
+                        <p style="font-size: 22px;">COR: <b>PRETO ⚫</b></p>
                     </div>
                 """, unsafe_allow_html=True)
-            else:
-                st.write("🔍 Monitorando API... Aguardando Pedra 10.")
         else:
-            st.warning("Aguardando conexão com a API da plataforma...")
+            container_sinal.info("🔍 Analisando rodadas... Aguardando a Pedra 10.")
 
-    # O Sniper checa a API a cada 3 segundos (tempo ideal para não ser bloqueado)
+    except Exception as e:
+        st.error(f"Erro ao ler API: {e}")
+
+    # Intervalo de 3 segundos para ler a próxima rodada
     time.sleep(3)
