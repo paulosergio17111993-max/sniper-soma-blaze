@@ -3,7 +3,7 @@ import requests
 import time
 from datetime import datetime
 
-# --- CONFIGURAÇÃO VISUAL RAIZ (SOMA PRO) ---
+# --- CONFIGURAÇÃO VISUAL RAIZ ---
 st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="wide")
 
 st.markdown("""
@@ -13,9 +13,9 @@ st.markdown("""
         padding: 15px; border-radius: 4px; margin-bottom: 8px;
         text-align: center; font-weight: bold; font-size: 18px;
     }
-    .cor-0 { background-color: #ffffff; color: #000; } /* BRANCO */
-    .cor-1 { background-color: #f12c4c; color: #fff; } /* VERMELHO */
-    .cor-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; } /* PRETO */
+    .cor-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; }
+    .cor-1 { background-color: #f12c4c; color: #fff; }
+    .cor-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; }
     
     .card-term {
         background: #111; border-left: 5px solid #00ff00;
@@ -42,16 +42,14 @@ with col3:
     st.markdown("### ⚪ TERMINAIS")
     area_brancos = st.empty()
 
-# MEMÓRIA DE BRANCOS
 if 'brancos_viciados' not in st.session_state:
     st.session_state.brancos_viciados = []
 
-# --- FUNÇÃO DE CONEXÃO LIMPA ---
+# --- CONEXÃO DISFARÇADA ---
 def pegar_dados():
     url = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
     headers = {
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1",
-        "Accept": "application/json"
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1"
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -59,12 +57,11 @@ def pegar_dados():
     except:
         return None
 
-# --- LOOP PRINCIPAL ---
 while True:
     dados = pegar_dados()
     
     if dados:
-        # 1. LISTA DE CORES (ESQUERDA)
+        # 1. LISTA (ESQUERDA)
         with area_lista.container():
             for d in dados[:10]:
                 c = d['color']
@@ -80,7 +77,7 @@ while True:
         with area_sinal.container():
             st.markdown(f"""
                 <div class="painel-sinal">
-                    <h1 style="color: #00ff00; margin:0;">ENTRADA CONFIRMADA</h1>
+                    <h1 style="color: #00ff00; margin:0;">SINAL CONFIRMADO</h1>
                     <div style="font-size: 50px; font-weight: bold; margin: 25px 0;">{sinal}</div>
                     <p style="background:white; color:black; padding:10px; font-weight:bold; display:inline-block; border-radius:5px;">COBRIR BRANCO ⚪</p>
                 </div>
@@ -96,6 +93,6 @@ while True:
             for b in st.session_state.brancos_viciados[:8]:
                 st.markdown(f'<div class="card-term"><small>BRANCO ÀS:</small><br><b style="font-size:25px;">{b}</b></div>', unsafe_allow_html=True)
     else:
-        area_sinal.error("Sincronizando... Se demorar, recarregue a página.")
+        area_sinal.warning("Sincronizando... Se demorar, recarregue a página.")
     
-    time.sleep(12) # Tempo maior para evitar novo bloqueio
+    time.sleep(12)
