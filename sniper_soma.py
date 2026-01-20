@@ -2,105 +2,92 @@ import streamlit as st
 import requests
 import time
 
-# --- CONFIGURAÇÃO DE INTERFACE RAIZ ---
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050505; color: white; }
-    
-    /* Lista de Cores Vertical (Coluna 1) */
-    .caixa-cor {
-        padding: 12px; border-radius: 6px; margin-bottom: 6px;
-        font-weight: bold; text-align: center; font-size: 16px;
+    .stApp { background-color: #000; color: white; }
+    .coluna-cor {
+        padding: 10px; border-radius: 5px; margin-bottom: 5px;
+        text-align: center; font-weight: bold;
     }
-    .c-0 { background-color: #ffffff; color: #000; box-shadow: 0 0 10px #fff; } /* Branco */
-    .c-1 { background-color: #f12c4c; color: #fff; } /* Vermelho */
-    .c-2 { background-color: #2b2b2b; color: #fff; border: 1px solid #444; } /* Preto */
-
-    /* Terminais de Branco (Coluna 3) */
-    .card-terminal {
-        background: #111; border-left: 5px solid #ffffff;
-        padding: 15px; margin-bottom: 10px; border-radius: 0 10px 10px 0;
-    }
+    .c-0 { background: #fff; color: #000; }
+    .c-1 { background: #f12c4c; color: #fff; }
+    .c-2 { background: #333; color: #fff; border: 1px solid #555; }
     
-    /* Painel de Entrada (Coluna 2) */
-    .alerta-central {
-        background: #000; border: 3px solid #00ff00;
-        border-radius: 20px; padding: 50px; text-align: center;
-        box-shadow: 0 0 25px rgba(0,255,0,0.3);
+    .card-branco {
+        background: #111; border-left: 5px solid #fff;
+        padding: 15px; margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🏹 SNIPER MS PRO")
 
-# Layout de 3 Colunas: Cores | Entrada | Terminais
-col1, col2, col3 = st.columns([1, 1.8, 1])
+# 1. Define onde as coisas vão aparecer
+col_hist, col_sinal, col_brancos = st.columns([1, 1.5, 1])
 
-with col1:
-    st.markdown("### 🕒 CORES")
-    area_cores = st.empty()
+with col_hist:
+    st.subheader("🕒 CORES")
+    area_lista = st.empty()
 
-with col2:
-    st.markdown("### 🎯 ENTRADA")
+with col_sinal:
+    st.subheader("🎯 SINAL")
     area_sinal = st.empty()
 
-with col3:
-    st.markdown("### ⚪ TERMINAIS")
+with col_brancos:
+    st.subheader("⚪ BRANCOS")
     area_terminais = st.empty()
 
-# URL DA API DA SMASHUP
-URL_API = "https://api.smashup.com/api/v1/games/double/history"
+# URL DA API
+URL = "https://api.smashup.com/api/v1/games/double/history"
 
 while True:
     try:
-        r = requests.get(URL_API, timeout=10)
+        # Puxa os dados
+        r = requests.get(URL, timeout=10)
         dados = r.json()
         
-        # Ajuste para ler a lista de registros que você mandou
-        records = dados.get('records', []) if isinstance(dados, dict) else dados
+        # Se os dados vierem como dicionário, pega a lista 'records'
+        lista = dados.get('records', []) if isinstance(dados, dict) else dados
         
-        if records:
-            # 1. PREENCHE A LISTA VERTICAL DE CORES
-            with area_cores.container():
-                for p in records[:15]:
-                    nome = "BRANCO" if p['color'] == 0 else ("VERMELHO" if p['color'] == 1 else "PRETO")
-                    st.markdown(f'<div class="caixa-cor c-{p["color"]}">{nome} ({p["roll"]})</div>', unsafe_allow_html=True)
+        if lista:
+            # --- PREENCHE A LISTA DE CORES ---
+            with area_lista.container():
+                for item in lista[:15]:
+                    cor = item['color']
+                    num = item['roll']
+                    nome = "BRANCO" if cor == 0 else ("VERMELHO" if cor == 1 else "PRETO")
+                    st.markdown(f'<div class="coluna-cor c-{cor}">{nome} ({num})</div>', unsafe_allow_html=True)
 
-            # 2. GERA O SINAL DE ENTRADA
-            ultima = records[0]
-            sugestao = "VERMELHO 🔴" if ultima['color'] == 2 else "PRETO ⚫"
-            if ultima['color'] == 0: sugestao = "AGUARDAR GIRO..."
-
+            # --- GERA O SINAL ---
+            ultima = lista[0]
+            sugestao = "PRETO ⚫" if ultima['color'] == 1 else "VERMELHO 🔴"
+            
             with area_sinal.container():
                 st.markdown(f"""
-                    <div class="alerta-central">
-                        <h1 style="color: #00ff00; margin:0;">SINAL CONFIRMADO</h1>
-                        <div style="font-size: 50px; font-weight: bold; margin: 25px 0;">{sugestao}</div>
-                        <p style="background: white; color: black; padding: 10px; border-radius: 5px; font-weight: bold; display: inline-block;">
-                            COBRIR O BRANCO ⚪
-                        </p>
+                    <div style="border: 3px solid #00ff00; padding: 40px; text-align: center; border-radius: 20px;">
+                        <h1 style="color: #00ff00;">SINAL CONFIRMADO</h1>
+                        <div style="font-size: 50px; font-weight: bold;">{sugestao}</div>
+                        <p>COBRIR O BRANCO ⚪</p>
                     </div>
                 """, unsafe_allow_html=True)
 
-            # 3. FILTRA OS TERMINAIS DE BRANCO (Pelo created_at)
+            # --- TERMINAIS DE BRANCO (Horários) ---
             with area_terminais.container():
-                brancos = [d for d in records if d['color'] == 0]
-                if brancos:
-                    for b in brancos[:8]:
-                        # Pega o horário (HH:MM) do campo que você enviou
-                        horario = b['created_at'][11:16]
-                        st.markdown(f"""
-                            <div class="card-terminal">
-                                <span style="color: #666; font-size: 12px;">BRANCO ÀS:</span><br>
-                                <b style="font-size: 24px;">{horario}</b>
-                            </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.info("Buscando padrões de Branco...")
+                brancos = [i for i in lista if i['color'] == 0]
+                for b in brancos[:8]:
+                    hora = b['created_at'][11:16] # Pega HH:MM
+                    st.markdown(f"""
+                        <div class="card-branco">
+                            <small style="color: #888;">HORÁRIO VICIADO</small><br>
+                            <b style="font-size: 25px;">{hora}</b>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-    except Exception:
-        pass
-    
+    except Exception as e:
+        # Se der erro, ele avisa na tela
+        st.error(f"Aguardando conexão...")
+
     time.sleep(5)
