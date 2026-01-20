@@ -2,92 +2,104 @@ import streamlit as st
 import requests
 import time
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="SNIPER MS PRO", layout="wide")
+# --- CONFIGURAÇÃO DE TELA CHEIA (Estilo Algoritmo-Soma-Pro) ---
+st.set_page_config(page_title="ALGORITMO SOMA PRO", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: white; }
-    .coluna-cor {
-        padding: 10px; border-radius: 5px; margin-bottom: 5px;
-        text-align: center; font-weight: bold;
-    }
-    .c-0 { background: #fff; color: #000; }
-    .c-1 { background: #f12c4c; color: #fff; }
-    .c-2 { background: #333; color: #fff; border: 1px solid #555; }
+    .stApp { background-color: #080808; color: white; }
     
-    .card-branco {
-        background: #111; border-left: 5px solid #fff;
-        padding: 15px; margin-bottom: 10px;
+    /* Coluna de Cores Vertical */
+    .linha-cor {
+        padding: 10px; margin-bottom: 5px; border-radius: 4px;
+        text-align: center; font-weight: bold; font-size: 14px;
+    }
+    .cor-0 { background: #ffffff; color: #000; border: 1px solid #ccc; }
+    .cor-1 { background: #f12c4c; color: #fff; }
+    .cor-2 { background: #2b2b2b; color: #fff; border: 1px solid #444; }
+
+    /* Cartão de Horário (Terminais) */
+    .card-terminal {
+        background: #151515; border-left: 5px solid #00ff00;
+        padding: 15px; margin-bottom: 8px; border-radius: 4px;
+    }
+    
+    /* Painel de Sinal Central */
+    .box-sinal {
+        background: #000; border: 2px solid #00ff00;
+        padding: 40px; text-align: center; border-radius: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🏹 SNIPER MS PRO")
+st.title("🏹 ALGORITMO SOMA PRO")
 
-# 1. Define onde as coisas vão aparecer
-col_hist, col_sinal, col_brancos = st.columns([1, 1.5, 1])
+# Criando as 3 colunas laterais
+col_historico, col_principal, col_terminais = st.columns([1, 1.8, 1])
 
-with col_hist:
-    st.subheader("🕒 CORES")
+with col_historico:
+    st.subheader("🕒 LISTA CORES")
     area_lista = st.empty()
 
-with col_sinal:
-    st.subheader("🎯 SINAL")
-    area_sinal = st.empty()
+with col_principal:
+    st.subheader("🎯 MONITORAMENTO")
+    area_entrada = st.empty()
 
-with col_brancos:
-    st.subheader("⚪ BRANCOS")
-    area_terminais = st.empty()
+with col_terminais:
+    st.subheader("⚪ HORÁRIOS BRANCO")
+    area_brancos = st.empty()
 
-# URL DA API
-URL = "https://api.smashup.com/api/v1/games/double/history"
+URL_API = "https://api.smashup.com/api/v1/games/double/history"
 
 while True:
     try:
-        # Puxa os dados
-        r = requests.get(URL, timeout=10)
+        r = requests.get(URL_API, timeout=10)
         dados = r.json()
         
-        # Se os dados vierem como dicionário, pega a lista 'records'
-        lista = dados.get('records', []) if isinstance(dados, dict) else dados
+        # Lendo a lista de rodadas
+        registros = dados.get('records', []) if isinstance(dados, dict) else dados
         
-        if lista:
-            # --- PREENCHE A LISTA DE CORES ---
+        if registros:
+            # 1. LISTA VERTICAL DE CORES (Esquerda)
             with area_lista.container():
-                for item in lista[:15]:
-                    cor = item['color']
-                    num = item['roll']
-                    nome = "BRANCO" if cor == 0 else ("VERMELHO" if cor == 1 else "PRETO")
-                    st.markdown(f'<div class="coluna-cor c-{cor}">{nome} ({num})</div>', unsafe_allow_html=True)
+                for r in registros[:15]:
+                    cor_id = r['color']
+                    num = r['roll']
+                    label = "BRANCO" if cor_id == 0 else ("VERMELHO" if cor_id == 1 else "PRETO")
+                    st.markdown(f'<div class="linha-cor cor-{cor_id}">{label} ({num})</div>', unsafe_allow_html=True)
 
-            # --- GERA O SINAL ---
-            ultima = lista[0]
-            sugestao = "PRETO ⚫" if ultima['color'] == 1 else "VERMELHO 🔴"
+            # 2. SINAL DE ENTRADA (Centro)
+            ultima = registros[0]
+            entrada = "PRETO ⚫" if ultima['color'] == 1 else "VERMELHO 🔴"
             
-            with area_sinal.container():
+            with area_entrada.container():
                 st.markdown(f"""
-                    <div style="border: 3px solid #00ff00; padding: 40px; text-align: center; border-radius: 20px;">
-                        <h1 style="color: #00ff00;">SINAL CONFIRMADO</h1>
-                        <div style="font-size: 50px; font-weight: bold;">{sugestao}</div>
-                        <p>COBRIR O BRANCO ⚪</p>
+                    <div class="box-sinal">
+                        <h2 style="color: #00ff00;">SINAL IDENTIFICADO</h2>
+                        <div style="font-size: 45px; font-weight: bold; margin: 15px 0;">{entrada}</div>
+                        <p style="background: white; color: black; padding: 5px; font-weight: bold; display: inline-block; border-radius: 4px;">
+                            PROTEGER NO BRANCO ⚪
+                        </p>
                     </div>
                 """, unsafe_allow_html=True)
 
-            # --- TERMINAIS DE BRANCO (Horários) ---
-            with area_terminais.container():
-                brancos = [i for i in lista if i['color'] == 0]
-                for b in brancos[:8]:
-                    hora = b['created_at'][11:16] # Pega HH:MM
-                    st.markdown(f"""
-                        <div class="card-branco">
-                            <small style="color: #888;">HORÁRIO VICIADO</small><br>
-                            <b style="font-size: 25px;">{hora}</b>
-                        </div>
-                    """, unsafe_allow_html=True)
+            # 3. TERMINAIS VICIADOS (Direita) - Extrai o HH:MM do created_at
+            with area_brancos.container():
+                lista_brancos = [i for i in registros if i['color'] == 0]
+                if lista_brancos:
+                    for b in lista_brancos[:8]:
+                        # Pega o horário 01:03 do JSON que você mandou
+                        hora_minuto = b['created_at'][11:16]
+                        st.markdown(f"""
+                            <div class="card-terminal">
+                                <small style="color: #888;">TERMINAL CONFIRMADO</small><br>
+                                <b style="font-size: 24px;">{hora_minuto}</b>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("Monitorando horários...")
 
-    except Exception as e:
-        # Se der erro, ele avisa na tela
-        st.error(f"Aguardando conexão...")
+    except:
+        st.warning("Reconectando ao servidor...")
 
     time.sleep(5)
